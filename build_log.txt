@@ -1,0 +1,45 @@
+[0.240s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'clearpath_platform_description' is in: /home/ros/project_zero/install/clearpath_platform_description, /opt/ros/jazzy
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding clearpath_platform_description
+
+This may be promoted to an error in a future release of colcon-override-check.
+Starting >>> clearpath_manipulators_description
+Starting >>> clearpath_bt_joy
+Starting >>> clearpath_mounts_description
+Starting >>> clearpath_platform_description
+Starting >>> clearpath_sensors_description
+Finished <<< clearpath_manipulators_description [0.26s]
+Starting >>> clearpath_diagnostics
+Finished <<< clearpath_sensors_description [0.27s]
+Finished <<< clearpath_mounts_description [0.29s]
+Starting >>> clearpath_manipulators
+Starting >>> clearpath_bms_broadcaster
+Finished <<< clearpath_platform_description [0.31s]
+Starting >>> clearpath_description
+Finished <<< clearpath_manipulators [0.11s]
+Starting >>> clearpath_customization
+Finished <<< clearpath_diagnostics [0.20s]
+Starting >>> clearpath_nav2_demos
+Finished <<< clearpath_customization [0.10s]
+Finished <<< clearpath_bms_broadcaster [0.22s]
+Finished <<< clearpath_description [0.22s]
+Finished <<< clearpath_nav2_demos [0.10s]
+Finished <<< clearpath_bt_joy [1.39s]
+Starting >>> clearpath_control
+Finished <<< clearpath_control [0.12s]
+Starting >>> clearpath_generator_common
+Finished <<< clearpath_generator_common [0.55s]
+Starting >>> clearpath_common
+Starting >>> clearpath_generator_gz
+Finished <<< clearpath_common [0.19s]
+Finished <<< clearpath_generator_gz [0.49s]
+Starting >>> clearpath_gz
+Finished <<< clearpath_gz [0.31s]
+Starting >>> clearpath_simulator
+Finished <<< clearpath_simulator [0.31s]
+
+Summary: 17 packages finished [3.35s]
