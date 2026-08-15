@@ -10,13 +10,13 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                        Gazebo Harmonic (Sim)                        │
-│  ┌────────────┐  ┌──────────────┐  ┌───────────────────────────┐   │
-│  │  Jackal    │  │  Velodyne    │  │   Camera (simulated RGB)  │   │
-│  │  J100      │  │  VLP-16     │  │                           │   │
-│  └─────┬──────┘  └──────┬──────┘  └────────────┬──────────────┘   │
-│        │                │                       │                   │
-└────────┼────────────────┼───────────────────────┼───────────────────┘
+│                        Gazebo Harmonic (Sim)                         │
+│  ┌────────────┐  ┌──────────────┐  ┌───────────────────────────┐     │
+│  │  Jackal    │  │  Velodyne    │  │   Camera (simulated RGB)  │     │
+│  │  J100      │  │  VLP-16     │  │                           │     │
+│  └─────┬──────┘  └──────┬──────┘  └────────────┬──────────────┘     │
+│        │                │                       │                     │
+└────────┼────────────────┼───────────────────────┼─────────────────────┘
          │ /cmd_vel       │ /sensors/             │ /sensors/
          │                │  lidar3d_0/points     │  camera_0/color/image
          │                ▼                       │
@@ -45,14 +45,16 @@
          │   └──────────┬──────────┘              │
          │              │                         │
          ▼              ▼                         ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                      jackal_mission                              │
-│              (waypoint sequencer + report generator)             │
-│  • Sends goals via Nav2 BasicNavigator API                      │
-│  • Collects detections at each waypoint                          │
-│  • Generates JSON + text summary report                          │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                        jackal_mission                                │
+│              (waypoint sequencer + report generator)                 │
+│  • Sends goals via Nav2 BasicNavigator API                          │
+│  • Collects detections at each waypoint                              │
+│  • Generates JSON + text summary report                              │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+---
 
 ## 2. Package Structure
 
@@ -62,115 +64,142 @@ Project-Zero/                          (colcon workspace root)
 │   ├── clearpath_common/              Upstream: URDF, control, platform packages
 │   ├── clearpath_simulator/           Upstream: Gazebo Harmonic integration
 │   ├── clearpath_nav2_demos/          Upstream: SLAM / Nav2 launch + configs (j100)
-│   ├── jackal_vision/                 ★ NEW — YOLO object detection node
+│   │   └── config/j100/
+│   │       ├── localization.yaml      AMCL & MapServer parameter tuning
+│   │       └── nav2.yaml              Nav2 stack configuration & plugin classes
+│   ├── jackal_vision/                 ★ NEW — YOLO object detection package
 │   │   ├── jackal_vision/
-│   │   │   └── yolo_detector_node.py
-│   │   ├── config/yolo_params.yaml
-│   │   └── launch/vision.launch.py
-│   └── jackal_mission/                ★ NEW — Mission orchestrator
+│   │   │   └── yolo_detector_node.py  YOLOv8 ROS2 node (vision_msgs output)
+│   │   ├── config/
+│   │   │   ├── yolo_params.yaml       Model weights, inference rate, classes
+│   │   │   └── mission_viz.rviz       Pre-configured RViz with Nav2 + Camera + YOLO
+│   │   └── launch/
+│   │       └── vision.launch.py       Detector bringup
+│   └── jackal_mission/                ★ NEW — Mission orchestrator package
 │       ├── jackal_mission/
-│       │   └── mission_node.py
+│       │   └── mission_node.py        Autonomous navigator & report generator
 │       ├── config/
-│       │   ├── waypoints.yaml
-│       │   └── mission_params.yaml
-│       └── launch/mission.launch.py   ← top-level "one launch" file
+│       │   ├── waypoints.yaml         Waypoint coordinates & dwell durations
+│       │   └── mission_params.yaml    Report directory & lifecycle configs
+│       └── launch/
+│           └── mission.launch.py      ★ Top-level "one-launch" mission file
 ├── launch/
 │   └── pointcloud_to_laserscan.launch.py
 ├── maps/
-│   ├── warehouse_map.pgm
-│   └── warehouse_map.yaml
-├── IMPLEMENTATION.md
+│   ├── warehouse_map.pgm              Occupancy grid image
+│   └── warehouse_map.yaml             Map metadata
+├── IMPLEMENTATION.md                  Workspace & architecture notes
 ├── TECHNICAL_NOTE.md                  (this document)
-└── README.md                          (original assignment brief)
+├── TESTING_GUIDE.md                   Step-by-step test & verification guide
+└── README.md                          Project overview & guidelines
 ```
+
+---
 
 ## 3. Key Design Choices
 
 ### 3.1 Pointcloud-to-LaserScan Bridge
-
-The Jackal's `robot.yaml` configures a Velodyne VLP-16 as a `lidar3d` sensor, but the
-Clearpath SLAM/Nav2 configs expect 2D scan data on `sensors/lidar2d_0/scan`. Rather
-than modifying upstream configs, we run `pointcloud_to_laserscan_node` to convert the
-3D point cloud into a virtual 2D scan. Parameters are set to slice a ±0.2 m horizontal
-band with a 20 m max range, matching the VLP-16's effective outdoor range.
+The Jackal's `robot.yaml` configures a Velodyne VLP-16 as a `lidar3d` sensor, but Nav2 and AMCL expect 2D scan data on `sensors/lidar2d_0/scan`. Rather than modifying upstream robot description packages, we run `pointcloud_to_laserscan_node` to convert the 3D point cloud into a virtual 2D scan slice ($\pm0.2\,\text{m}$, $20\,\text{m}$ max range).
 
 ### 3.2 SLAM Toolbox for Mapping
-
-SLAM Toolbox was chosen over RTAB-Map because:
-- It is the default Nav2-ecosystem mapper with well-tested integration.
-- The `clearpath_nav2_demos` package ships tuned SLAM Toolbox configs for the J100.
-- It produces clean occupancy grids suitable for AMCL and Nav2 planners.
-
-**Map parameters**: resolution 0.05 m, max laser range 20 m, loop closure enabled.
-The warehouse map was generated by teleoperating the Jackal through the Gazebo warehouse
-world.
+SLAM Toolbox was selected for generating the warehouse occupancy grid due to its tight integration with Nav2 lifecycle nodes and out-of-the-box loop-closure stability.
 
 ### 3.3 AMCL for Localization
-
-AMCL (Adaptive Monte Carlo Localization) is used via `clearpath_nav2_demos`'s
-`localization.launch.py`. It reads the saved occupancy map and publishes the `map → odom`
-transform. The configuration uses a likelihood field model with 500–2000 particles,
-which balances accuracy and compute cost on the Jackal's onboard i5. Compatible with
-ROS2 Humble's Nav2 stack.
+AMCL (Adaptive Monte Carlo Localization) is deployed with a likelihood field model ($500 - 2000$ particles) to publish the `map → odom` transform. The `mission_node` sets the initial pose estimate programmatically on startup with `(0,0)` timestamps to ensure seamless transform lookups under simulation time.
 
 ### 3.4 Nav2 for Navigation
-
-The Nav2 stack uses the MPPI controller (model-predictive path integral) rather than the
-older DWB planner, providing smoother trajectories on the differential-drive Jackal.
-Recovery behaviours include spin, backup, and wait, which handle common stuck scenarios
-(transient obstacles, tight corridors).
+Nav2 coordinates path planning and motion control using the MPPI controller. Recovery behaviors (spin, backup, wait) are fully enabled to handle dynamic or transient warehouse obstacles.
 
 ### 3.5 YOLOv8 for Object Detection
+- **Model**: YOLOv8n (nano) running locally on CPU/GPU.
+- **Classes**: Person, backpack, bicycle (configurable in `yolo_params.yaml`).
+- **Standard Interface**: Publishes `vision_msgs/Detection2DArray` and annotated camera frames on `~/detections_image`.
 
-- **Model**: YOLOv8n (nano) — small enough for CPU inference at ~5 FPS, good enough for
-  the required 3+ classes.
-- **Classes**: person, backpack, bicycle (configurable via `yolo_params.yaml`).
-- **Interface**: publishes `vision_msgs/Detection2DArray` so any lab node can consume
-  detections without reading the vision package's code.
-- **Rate limiting**: inference runs at a configurable Hz (default 5) to avoid saturating
-  the CPU during navigation.
+### 3.6 Mission Orchestrator & Reporting
+`mission_node` utilizes the `BasicNavigator` API to sequence navigation through waypoints (`shelf_a`, `shelf_b`, `loading_dock`), dwell for object detection, and generate machine-readable JSON and human-readable text reports in `/tmp/jackal_mission_reports/`.
 
-### 3.6 Mission Orchestrator
+---
 
-The mission node uses Nav2's `BasicNavigator` Python API to send sequential goals. At
-each waypoint, it dwells for a configurable duration, collects detections, de-duplicates
-by class, and appends to a log. On completion, it writes a JSON report (machine-readable)
-and a text summary (human-readable) to disk.
+## 4. Simulation Clock Synchronization Requirement
 
-## 4. Known Limitations
+When running in simulation (`use_sim_time:=true`), ROS 2 nodes synchronize their internal timers, TF lookups, and lifecycle transitions to the `/clock` topic published by Gazebo. 
 
-- **Camera sensor**: The OAK-D-S2-FF camera is not yet integrated on the real Jackal.
-  In simulation, a simulated RGB camera must be added to `robot.yaml`. The vision
-  pipeline will silently wait if no camera images are published.
-- **Waypoint coordinates**: The default waypoints in `waypoints.yaml` are approximate
-  for the warehouse world. They should be tuned after inspecting the map in RViz2.
-- **YOLO on CPU**: Inference is limited to ~5 FPS on CPU. On the Jackal's RTX 3070,
-  setting `device: '0'` in `yolo_params.yaml` enables GPU acceleration for real-time rates.
-- **No frontier exploration**: The system requires a pre-built map. Autonomous exploration
-  is listed as an optional extension.
+Because Gazebo launches paused by default (allowing robot meshes and ROS controllers to finish loading into memory), **the simulation clock must be explicitly unpaused**:
+
+```bash
+ign service -s /world/warehouse/control --req 'pause: false'
+```
+
+---
 
 ## 5. Deployment Instructions
 
-### Simulation
+### Mode 1: Combined / All-in-One Execution
 
 ```bash
-# Terminal 1 — Gazebo
+# Terminal 1: Launch Gazebo Simulation
 ros2 launch clearpath_gz simulation.launch.py
 
-# Terminal 2 — Full mission pipeline
+# Terminal 2: Unpause Gazebo Clock
+ign service -s /world/warehouse/control --req 'pause: false'
+
+# Terminal 3: Launch Pre-Configured RViz2 (Navigation + Camera + YOLO)
+ros2 run rviz2 rviz2 \
+    -d ~/Project-Zero/src/jackal_vision/config/mission_viz.rviz \
+    --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
+
+# Terminal 4: Launch Full Mission Pipeline (AMCL + Nav2 + YOLO + Mission Node)
 ros2 launch jackal_mission mission.launch.py \
     use_sim_time:=true \
     map:=$(pwd)/maps/warehouse_map.yaml
 ```
 
-### Real Jackal
+---
+
+### Mode 2: Individual / Step-by-Step Component Execution
 
 ```bash
-# On the Jackal's onboard computer (robot.yaml already in ~/clearpath/)
-ros2 launch jackal_mission mission.launch.py \
-    use_sim_time:=false \
-    map:=/path/to/warehouse_map.yaml
+# 1. Simulation
+ros2 launch clearpath_gz simulation.launch.py
+
+# 2. Clock Unpause
+ign service -s /world/warehouse/control --req 'pause: false'
+
+# 3. 3D-to-2D LiDAR Bridge
+ros2 launch launch/pointcloud_to_laserscan.launch.py
+
+# 4. Localization (AMCL + Map Server)
+ros2 launch clearpath_nav2_demos localization.launch.py \
+    use_sim_time:=true \
+    setup_path:=$HOME/clearpath/ \
+    map:=$(pwd)/maps/warehouse_map.yaml
+
+# 5. Nav2 Stack
+ros2 launch clearpath_nav2_demos nav2.launch.py \
+    use_sim_time:=true \
+    setup_path:=$HOME/clearpath/
+
+# 6. YOLOv8 Object Detection
+ros2 launch jackal_vision vision.launch.py namespace:=j100_0000 use_sim_time:=true
+
+# 7. RViz2 Visualizer
+ros2 run rviz2 rviz2 \
+    -d src/jackal_vision/config/mission_viz.rviz \
+    --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
+
+# 8. Mission Sequencer
+ros2 run jackal_mission mission_node --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
 ```
 
-**Safety**: confirm the deadman switch location and ensure floor clearance before
-running on hardware.
+---
+
+### Visualization Utilities
+
+* **Standalone Camera & YOLO GUI**:
+  ```bash
+  ros2 run rqt_image_view rqt_image_view /j100_0000/yolo_detector/detections_image
+  ```
+* **TF Tree Inspection**:
+  ```bash
+  ros2 run tf2_tools view_frames --ros-args -p use_sim_time:=true
+  ```

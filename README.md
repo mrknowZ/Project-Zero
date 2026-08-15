@@ -64,6 +64,38 @@ Detect at least three object categories (e.g. backpack, car, bicycle, person). A
 ### 7. System Integration
 A single demonstrable mission: start the robot → load the map → localize → navigate to multiple waypoints → detect objects encountered along the way → report results (e.g., a log, a summary message, a simple file, a video).
 
+## Quick Start & Execution
+
+### 1. Build
+```bash
+source /opt/ros/humble/setup.bash
+pip install ultralytics opencv-python-headless
+rosdep install -r --from-paths src -i -y
+colcon build --symlink-install
+source install/setup.bash
+```
+
+### 2. Run Full Mission (Combined Mode)
+```bash
+# Terminal 1: Simulation
+ros2 launch clearpath_gz simulation.launch.py
+
+# Terminal 2: Unpause Gazebo Clock (mandatory for use_sim_time)
+ign service -s /world/warehouse/control --req 'pause: false'
+
+# Terminal 3: Pre-configured RViz2 (Nav2 + Camera + YOLO Detections)
+ros2 run rviz2 rviz2 \
+    -d src/jackal_vision/config/mission_viz.rviz \
+    --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
+
+# Terminal 4: Mission Pipeline
+ros2 launch jackal_mission mission.launch.py \
+    use_sim_time:=true \
+    map:=$(pwd)/maps/warehouse_map.yaml
+```
+
+> For step-by-step modular commands (running SLAM, AMCL, Nav2, YOLO, RViz individually) and evidence capture, refer to [TESTING_GUIDE.md](TESTING_GUIDE.md) and [TECHNICAL_NOTE.md](TECHNICAL_NOTE.md).
+
 ## Deliverables
 
 **Repository**: source code, launch files, config files, README.

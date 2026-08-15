@@ -1,15 +1,15 @@
-# Project Zero — SLAM & Localization Testing Guide
+# Project Zero — Comprehensive Testing & Execution Guide
 
-Step-by-step commands to test each component and **capture evidence** for your deliverables.
-
-> Run all commands on your ROS2 Humble machine (Ubuntu 22.04) with a display for RViz2/Gazebo.
+Step-by-step commands to run, test, and **capture evidence** for the Clearpath Jackal autonomy and vision pipeline in Gazebo Harmonic and real hardware.
 
 ---
 
-## 0. Build Everything First
+## 0. Build & Environment Preparation
+
+Before launching any nodes, build the workspace and install required dependencies:
 
 ```bash
-cd ~/Project-Zero   # or wherever your workspace is
+cd ~/Project-Zero
 source /opt/ros/humble/setup.bash
 pip install ultralytics opencv-python-headless
 rosdep install -r --from-paths src -i -y
@@ -19,24 +19,84 @@ source install/setup.bash
 
 ---
 
-## 1. Test SLAM (Mapping) — Capture Evidence
+## 1. Quick Execution Options
 
-### Start simulation
+### Option A: Combined / All-in-One Execution (Recommended)
+
+Run the full end-to-end autonomous mission (Gazebo + PointCloud Bridge + AMCL + Nav2 + YOLOv8 + Mission Sequencer + RViz) using just 3 terminal windows:
+
+#### Terminal 1 — Start Gazebo Simulation
 ```bash
-# Terminal 1
+source /opt/ros/humble/setup.bash
+source ~/Project-Zero/install/setup.bash
 ros2 launch clearpath_gz simulation.launch.py
 ```
 
-### Start the pointcloud-to-laserscan bridge
+#### Terminal 2 — Unpause Gazebo Simulation Clock
+> **Why?** Nodes using `use_sim_time:=true` require Gazebo's `/clock` topic to advance. Gazebo starts paused by default while loading assets.
 ```bash
-# Terminal 2
-source install/setup.bash
+ign service -s /world/warehouse/control --req 'pause: false'
+```
+
+#### Terminal 3 — Launch Pre-Configured RViz2 Visualizer (Map + Robot + LiDAR + YOLO + Camera)
+```bash
+source /opt/ros/humble/setup.bash
+source ~/Project-Zero/install/setup.bash
+ros2 run rviz2 rviz2 \
+    -d ~/Project-Zero/src/jackal_vision/config/mission_viz.rviz \
+    --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
+```
+
+#### Terminal 4 — Launch Full Mission Pipeline
+```bash
+source /opt/ros/humble/setup.bash
+source ~/Project-Zero/install/setup.bash
+ros2 launch jackal_mission mission.launch.py \
+    use_sim_time:=true \
+    map:=~/Project-Zero/maps/warehouse_map.yaml
+```
+
+---
+
+### Option B: Modular / Step-by-Step Individual Component Execution
+
+If you want to run and debug each component individually in separate terminals:
+
+| Terminal | Component | Exact Command |
+|---|---|---|
+| **T1: Gazebo Simulation** | Simulation World & Jackal | `ros2 launch clearpath_gz simulation.launch.py` |
+| **T2: Unpause Clock** | Simulation Physics & Clock | `ign service -s /world/warehouse/control --req 'pause: false'` |
+| **T3: Sensor Bridge** | 3D PointCloud $\to$ 2D LaserScan | `ros2 launch launch/pointcloud_to_laserscan.launch.py` |
+| **T4: AMCL Localization** | Map Server & AMCL | `ros2 launch clearpath_nav2_demos localization.launch.py use_sim_time:=true setup_path:=$HOME/clearpath/ map:=$(pwd)/maps/warehouse_map.yaml` |
+| **T5: Nav2 Autonomy** | Planners, Controllers, Recoveries | `ros2 launch clearpath_nav2_demos nav2.launch.py use_sim_time:=true setup_path:=$HOME/clearpath/` |
+| **T6: YOLOv8 Detector** | Vision Object Detection | `ros2 launch jackal_vision vision.launch.py namespace:=j100_0000 use_sim_time:=true` |
+| **T7: RViz2 Visualizer** | Full Displays & Camera Overlay | `ros2 run rviz2 rviz2 -d src/jackal_vision/config/mission_viz.rviz --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true` |
+| **T8: Mission Node** | Waypoint Sequencer & Reports | `ros2 run jackal_mission mission_node --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true` |
+
+*(Optional standalone camera viewer)*:
+```bash
+ros2 run rqt_image_view rqt_image_view /j100_0000/yolo_detector/detections_image
+```
+
+---
+
+## 2. Test SLAM (Mapping) — Capture Evidence
+
+### Step 1: Start Simulation & Bridge
+```bash
+# Terminal 1 — Gazebo
+ros2 launch clearpath_gz simulation.launch.py
+
+# Terminal 2 — Unpause Clock
+ign service -s /world/warehouse/control --req 'pause: false'
+
+# Terminal 3 — 3D to 2D LiDAR Bridge
 ros2 launch launch/pointcloud_to_laserscan.launch.py
 ```
 
-### Start SLAM
+### Step 2: Start SLAM Toolbox
 ```bash
-# Terminal 3
+# Terminal 4
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 source install/setup.bash
 ros2 launch clearpath_nav2_demos slam.launch.py \
@@ -44,182 +104,110 @@ ros2 launch clearpath_nav2_demos slam.launch.py \
     setup_path:=$HOME/clearpath/
 ```
 
-### Teleop the robot to build the map
+### Step 3: Launch RViz Visualizer
 ```bash
-# Terminal 4
-export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-source install/setup.bash
+# Terminal 5
+ros2 launch clearpath_viz view_navigation.launch.py namespace:=j100_0000 use_sim_time:=true
+```
+
+### Step 4: Teleoperate Robot
+```bash
+# Terminal 6
 ros2 run teleop_twist_keyboard teleop_twist_keyboard \
     --ros-args -r /cmd_vel:=/j100_0000/cmd_vel
 ```
 
-### 📸 Evidence to Capture (SLAM)
-
-**a) Screenshot of RViz2 showing the map being built**
-- Open RViz2, add displays: Map, LaserScan, RobotModel, TF
-- Take a screenshot while the map is partially built
-- Take another after full map is built
-
-**b) List active topics**
+### Step 5: Save Map
 ```bash
-ros2 topic list | tee slam_topics.txt
-```
-
-**c) Check map topic is publishing**
-```bash
-ros2 topic echo /j100_0000/map --once | head -20 | tee slam_map_sample.txt
-```
-
-**d) Check scan topic**
-```bash
-ros2 topic echo /j100_0000/sensors/lidar2d_0/scan --once | head -20 | tee slam_scan_sample.txt
-```
-
-**e) Save the TF tree**
-```bash
-ros2 run tf2_tools view_frames --ros-args -p use_sim_time:=true
-# Produces frames_YYYY-MM-DD_HH.MM.SS.pdf
-```
-
-**f) Save the map**
-```bash
-ros2 run nav2_map_server map_saver_cli -f maps/my_new_map \
-    --ros-args -p use_sim_time:=true
+ros2 run nav2_map_server map_saver_cli -f maps/warehouse_map --ros-args -p use_sim_time:=true
 ```
 
 ---
 
-## 2. Test Localization (AMCL) — Capture Evidence
+## 3. Test Localization (AMCL) — Capture Evidence
 
-### Stop SLAM (Ctrl+C Terminal 3). Keep simulation + pointcloud bridge running.
-
-### Start localization with the saved map
 ```bash
-# Terminal 3 (reuse)
-source install/setup.bash
+# Terminal: Start Localization
 ros2 launch clearpath_nav2_demos localization.launch.py \
     use_sim_time:=true \
     setup_path:=$HOME/clearpath/ \
     map:=$(pwd)/maps/warehouse_map.yaml
 ```
 
-### 📸 Evidence to Capture (Localization)
-
-**a) Screenshot of RViz2 showing AMCL particle cloud**
-- In RViz2, add: Map, LaserScan, PoseArray (`/j100_0000/particle_cloud`)
-- Set initial pose via RViz2's "2D Pose Estimate" tool
-- Screenshot showing particles converging on the robot's position
-
-**b) Check AMCL is publishing**
+### 📸 Evidence Commands
 ```bash
+# Check AMCL Pose
 ros2 topic echo /j100_0000/amcl_pose --once | tee amcl_pose.txt
-```
 
-**c) Check the map → odom transform exists**
-```bash
+# Verify TF Transform (map -> odom -> base_link)
 ros2 run tf2_ros tf2_echo map odom --ros-args -r /tf:=/j100_0000/tf -r /tf_static:=/j100_0000/tf_static
 ```
-Take a screenshot of this output (should show a valid transform updating).
-
-**d) Drive around and verify localization tracks**
-Use teleop again, drive a loop, and screenshot the particle cloud staying converged.
 
 ---
 
-## 3. Test Navigation (Nav2) — Capture Evidence
+## 4. Test Navigation (Nav2) — Capture Evidence
 
-### Start Nav2 (in addition to localization)
 ```bash
-# Terminal 5
-source install/setup.bash
+# Terminal: Start Nav2
 ros2 launch clearpath_nav2_demos nav2.launch.py \
     use_sim_time:=true \
     setup_path:=$HOME/clearpath/
 ```
 
-### 📸 Evidence to Capture (Navigation)
-
-**a) Send a goal via RViz2**
-- Use the "Nav2 Goal" tool in RViz2
-- Screenshot showing the planned path and the robot following it
-
-**b) Test obstacle avoidance**
-- In Gazebo, place an object in the robot's path
-- Screenshot showing the robot replanning around the obstacle
-
-**c) Test recovery behaviour**
-- Send a goal that requires navigating a tight space
-- Screenshot/note showing spin/backup recovery
-
-**d) Log navigation feedback**
+### 📸 Evidence Commands
+- Send goal in RViz2 using **Nav2 Goal** tool.
+- Test obstacle avoidance by spawning an obstacle in Gazebo in front of the robot.
+- Check Nav2 feedback:
 ```bash
 ros2 topic echo /j100_0000/navigate_to_pose/_action/feedback --once | tee nav2_feedback.txt
 ```
 
 ---
 
-## 4. Test Vision (YOLO) — Capture Evidence
-
-> **Prerequisite**: You need a camera sensor in `robot.yaml` and image topics publishing.
+## 5. Test Vision (YOLOv8) — Capture Evidence
 
 ```bash
-# Terminal 2
-export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-source install/setup.bash
-ros2 launch clearpath_viz view_navigation.launch.py namespace:=j100_0000
+# Terminal: Start YOLOv8 Detector
+ros2 launch jackal_vision vision.launch.py namespace:=j100_0000 use_sim_time:=true
 ```
 
-### 📸 Evidence to Capture (Vision)
-
-**a) Check detections topic**
+### 📸 Evidence Commands
 ```bash
+# Check Detections topic (vision_msgs/Detection2DArray)
 ros2 topic echo /j100_0000/yolo_detector/detections --once | tee yolo_detections.txt
-```
 
-**b) View annotated image in RViz2**
-- Add Image display for `/j100_0000/yolo_detector/detections_image`
-- Screenshot showing bounding boxes on detected objects
+# Standalone annotated image viewer
+ros2 run rqt_image_view rqt_image_view /j100_0000/yolo_detector/detections_image
+```
 
 ---
 
-## 5. Full Mission Test — Capture Evidence
+## 6. Full Mission Demonstration & Report Verification
 
 ```bash
-# Terminal: start full pipeline (sim must already be running)
-source install/setup.bash
+# Start Full Mission
 ros2 launch jackal_mission mission.launch.py \
     use_sim_time:=true \
     map:=$(pwd)/maps/warehouse_map.yaml
 ```
 
-### 📸 Evidence to Capture (Mission)
-
-**a) Screenshot of RViz2 showing the robot navigating between waypoints**
-
-**b) Mission report files**
+### 📸 Mission Reports
+Reports are automatically timestamped and saved in `/tmp/jackal_mission_reports/`:
 ```bash
 ls -la /tmp/jackal_mission_reports/
 cat /tmp/jackal_mission_reports/mission_*.txt
 ```
-Include the report content in your technical note.
 
 ---
 
-## Quick Evidence Checklist
+## Evidence Checklist for Deliverables
 
-| Evidence Item | File/Screenshot | Requirement |
+| Requirement | Description | Evidence Output |
 |---|---|---|
-| Map in RViz2 (building) | screenshot | Req 3 |
-| Map in RViz2 (complete) | screenshot | Req 3 |
-| Saved map files (.pgm + .yaml) | `maps/` | Req 3 |
-| SLAM topics list | `slam_topics.txt` | Req 2 |
-| TF tree PDF | `frames_*.pdf` | Req 2 |
-| AMCL particle cloud | screenshot | Req 4 |
-| AMCL pose output | `amcl_pose.txt` | Req 4 |
-| map→odom transform | screenshot | Req 4 |
-| Nav2 path planning | screenshot | Req 5 |
-| Obstacle avoidance | screenshot | Req 5 |
-| YOLO detections | screenshot + `yolo_detections.txt` | Req 6 |
-| Annotated image in RViz2 | screenshot | Req 6 |
-| Mission report | `/tmp/jackal_mission_reports/` | Req 7 |
-| Robot navigating waypoints | screenshot | Req 7 |
+| **Req 1** | Clean ROS2 Workspace | Build succeeds cleanly via `colcon build` |
+| **Req 2** | Sensor Integration & TF | `frames_*.pdf`, `slam_topics.txt` |
+| **Req 3** | Mapping (SLAM Toolbox) | `maps/warehouse_map.yaml`, `maps/warehouse_map.pgm` |
+| **Req 4** | Localization (AMCL) | Particle cloud screenshot, `amcl_pose.txt` |
+| **Req 5** | Navigation (Nav2) | Goal trajectory screenshot, `nav2_feedback.txt` |
+| **Req 6** | Vision (YOLOv8) | `yolo_detections.txt`, detection images |
+| **Req 7** | System Integration | `/tmp/jackal_mission_reports/mission_*.json`, `.txt` |
