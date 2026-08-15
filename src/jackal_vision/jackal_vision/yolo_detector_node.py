@@ -24,9 +24,6 @@ from std_msgs.msg import Header
 import cv2
 import numpy as np
 
-# cv_bridge converts between ROS Image messages and OpenCV images.
-from cv_bridge import CvBridge
-
 
 # Common aliases mapped to COCO class names
 CLASS_SYNONYMS = {
@@ -43,15 +40,49 @@ CLASS_SYNONYMS = {
 
 # Color palette for different object types (BGR)
 COLOR_PALETTE = [
-    (0, 255, 0),    # Bright Green
-    (255, 140, 0),  # Deep Sky Blue
-    (0, 165, 255),  # Orange
-    (238, 130, 238),# Violet
-    (0, 215, 255),  # Gold
-    (255, 0, 255),  # Magenta
-    (0, 255, 255),  # Yellow
-    (144, 238, 144),# Light Green
+    (0, 255, 0),     # Bright Green
+    (255, 140, 0),   # Deep Sky Blue
+    (0, 165, 255),   # Orange
+    (238, 130, 238), # Violet
+    (0, 215, 255),   # Gold
+    (255, 0, 255),   # Magenta
+    (0, 255, 255),   # Yellow
+    (144, 238, 144), # Light Green
 ]
+
+
+def imgmsg_to_cv2(img_msg: Image) -> np.ndarray:
+    """Robust conversion of ROS Image message to OpenCV BGR numpy array."""
+    if img_msg.encoding == 'bgr8':
+        im = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((img_msg.height, img_msg.width, 3))
+        return im.copy()
+    elif img_msg.encoding == 'rgb8':
+        im = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((img_msg.height, img_msg.width, 3))
+        return cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
+    elif img_msg.encoding in ['mono8', '8UC1']:
+        im = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((img_msg.height, img_msg.width))
+        return cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+    else:
+        # Fallback raw byte reshape
+        im = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((img_msg.height, img_msg.width, -1))
+        if im.shape[2] == 3:
+            return cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
+        return im.copy()
+
+
+def cv2_to_imgmsg(cv_image: np.ndarray, encoding: str = 'bgr8', header: Header = None) -> Image:
+    """Robust conversion of OpenCV BGR numpy array to ROS Image message."""
+    msg = Image()
+    if header is not None:
+        msg.header = header
+    msg.height = cv_image.shape[0]
+    msg.width = cv_image.shape[1]
+    msg.encoding = encoding
+    msg.is_bigendian = 0
+    channels = 1 if len(cv_image.shape) == 2 else cv_image.shape[2]
+    msg.step = cv_image.shape[1] * channels
+    msg.data = cv_image.tobytes()
+    return msg
 
 
 class YoloDetectorNode(Node):
@@ -62,7 +93,7 @@ class YoloDetectorNode(Node):
 
         # --------------- Parameters ---------------
         self.declare_parameter('model_path', 'yolov8n.pt')
-        self.declare_parameter('confidence_threshold', 0.40)
+        self.declare_parameter('confidence_threshold', 0.35)
         self.declare_parameter('image_topic',
                                '/j100_0000/sensors/camera_0/color/image')
         self.declare_parameter('detection_rate_hz', 5.0)
@@ -91,7 +122,7 @@ class YoloDetectorNode(Node):
                 sys.path.insert(0, venv_site_packages)
             from ultralytics import YOLO
             self.model = YOLO(model_path)
-            # Warm-up inference (downloads weights on first run)
+            # Warm-up inference
             self.model.predict(
                 np.zeros((480, 640, 3), dtype=np.uint8),
                 device=device,
@@ -136,8 +167,6 @@ class YoloDetectorNode(Node):
             )
 
         # --------------- ROS I/O ---------------
-        self.bridge = CvBridge()
-
         qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
@@ -155,9 +184,8 @@ class YoloDetectorNode(Node):
             Image, '~/detections_image', 10
         )
 
-        # Rate-limit inference to avoid overloading CPU
+        # Rate-limit inference
         self._period = 1.0 / rate_hz
-        self._last_inference_time = self.get_clock().now()
         self._latest_image_msg = None
 
         self.timer = self.create_timer(self._period, self._timer_callback)
@@ -181,9 +209,9 @@ class YoloDetectorNode(Node):
 
         # Convert ROS Image → OpenCV BGR
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            cv_image = imgmsg_to_cv2(msg)
         except Exception as e:
-            self.get_logger().warn(f'cv_bridge conversion failed: {e}')
+            self.get_logger().warn(f'Image conversion failed: {e}')
             return
 
         # Run YOLOv8 inference
@@ -211,7 +239,6 @@ class YoloDetectorNode(Node):
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
 
                 cls_name = self.coco_names.get(cls_id, str(cls_id))
-                # For presentation, if potted plant is detected, label as plant/tree
                 display_name = 'tree/plant' if cls_name == 'potted plant' else cls_name
 
                 # Populate Detection2D
@@ -244,7 +271,6 @@ class YoloDetectorNode(Node):
                     color,
                     2,
                 )
-                # Background banner for text readability
                 (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
                 cv2.rectangle(
                     annotated,
@@ -265,8 +291,7 @@ class YoloDetectorNode(Node):
 
         # Publish annotated image
         try:
-            vis_msg = self.bridge.cv2_to_imgmsg(annotated, encoding='bgr8')
-            vis_msg.header = msg.header
+            vis_msg = cv2_to_imgmsg(annotated, encoding='bgr8', header=msg.header)
             self.vis_pub.publish(vis_msg)
         except Exception as e:
             self.get_logger().warn(f'Failed to publish annotated image: {e}')
