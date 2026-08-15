@@ -10,7 +10,8 @@ Launches the complete autonomous pipeline:
   5. Nav2 Autonomy Stack (MPPI Controller, Smac/NavFn Planner, BT Navigator)
   6. YOLOv8 Real-time Vision Detector Node
   7. RViz2 Visualizer (Pre-configured with Map, RobotModel, Costmaps, YOLO Feed)
-  8. Autonomous Multi-Waypoint Mission Orchestrator
+  8. Dedicated Camera View Window (rqt_image_view on YOLO Detections)
+  9. Autonomous Multi-Waypoint Mission Orchestrator
 """
 
 import os
@@ -58,6 +59,12 @@ def generate_launch_description():
         'rviz',
         default_value='true',
         description='Launch RViz2 visualizer',
+    )
+
+    camera_view_arg = DeclareLaunchArgument(
+        'camera_view',
+        default_value='true',
+        description='Launch dedicated rqt_image_view window for real-time YOLO camera detections',
     )
 
     mission_arg = DeclareLaunchArgument(
@@ -208,7 +215,21 @@ def generate_launch_description():
         ]
     )
 
-    # ---------------- 7. Mission Orchestrator Node ----------------
+    # ---------------- 7. Camera View Window (rqt_image_view) ----------------
+    camera_view_action = TimerAction(
+        period=8.0,
+        actions=[
+            Node(
+                package='rqt_image_view',
+                executable='rqt_image_view',
+                name='yolo_camera_viewer',
+                arguments=['/j100_0000/yolo_detector/detections_image'],
+                condition=IfCondition(LaunchConfiguration('camera_view')),
+            )
+        ],
+    )
+
+    # ---------------- 8. Mission Orchestrator Node ----------------
     mission_node = TimerAction(
         period=15.0,
         actions=[
@@ -230,6 +251,7 @@ def generate_launch_description():
     return LaunchDescription([
         sim_arg,
         rviz_arg,
+        camera_view_arg,
         mission_arg,
         namespace_arg,
         use_sim_time_arg,
@@ -242,5 +264,6 @@ def generate_launch_description():
         nav2_launch,
         vision_launch,
         rviz_group,
+        camera_view_action,
         mission_node,
     ])

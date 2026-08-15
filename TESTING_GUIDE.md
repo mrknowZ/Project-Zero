@@ -46,6 +46,27 @@ ros2 launch jackal_mission system.launch.py
 
 If you prefer to launch the major sub-systems in separate terminals:
 
+```mermaid
+graph TD
+    T1[T1: Gazebo Simulation] -->|publishes /clock & sensors| T2[T2: Unpause Clock]
+    T2 -->|enables physics| T3[T3: RViz2 & Visualizer]
+    T3 -->|displays robot & detections| T4[T4: Mission Launch]
+    T4 -->|Nav2 + YOLOv8 + Sequencer| Live[Live Autonomous Navigation & Object Detection]
+```
+
+### Terminal 1 — Start Gazebo Simulation
+```bash
+cd ~/ali/Project-Zero
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 launch clearpath_gz simulation.launch.py
+```
+
+### Terminal 2 — Unpause Simulation Clock
+```bash
+ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
+```
+
 ### Terminal 3 — Launch Pre-Configured RViz2 Visualizer
 > **What you will see in RViz2:**
 > * **Robot Model & Map**: 3D Jackal navigating over the 2D warehouse map.

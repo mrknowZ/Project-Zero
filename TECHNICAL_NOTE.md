@@ -67,23 +67,28 @@ Project-Zero/                          (colcon workspace root)
 │   │   └── config/j100/
 │   │       ├── localization.yaml      AMCL & MapServer parameter tuning
 │   │       └── nav2.yaml              Nav2 stack configuration & plugin classes
-│   ├── jackal_vision/                 ★ NEW — YOLO object detection package
+│   ├── jackal_vision/                 ★ YOLO object detection package
 │   │   ├── jackal_vision/
 │   │   │   └── yolo_detector_node.py  YOLOv8 ROS2 node (vision_msgs output)
 │   │   ├── config/
 │   │   │   ├── yolo_params.yaml       Model weights, inference rate, classes
 │   │   │   └── mission_viz.rviz       Pre-configured RViz with Nav2 + Camera + YOLO
 │   │   └── launch/
-│   │       └── vision.launch.py       Detector bringup
-│   └── jackal_mission/                ★ NEW — Mission orchestrator package
+│   │       ├── vision.launch.py       Detector bringup
+│   │       └── rviz.launch.py         Namespaced RViz2 visualizer bringup
+│   └── jackal_mission/                ★ Mission orchestrator & top-level bringup
 │       ├── jackal_mission/
 │       │   └── mission_node.py        Autonomous navigator & report generator
 │       ├── config/
 │       │   ├── waypoints.yaml         Waypoint coordinates & dwell durations
+│       │   ├── small_mission.yaml     Obstacle avoidance test waypoints
 │       │   └── mission_params.yaml    Report directory & lifecycle configs
 │       └── launch/
-│           └── mission.launch.py      ★ Top-level "one-launch" mission file
+│           ├── system.launch.py       ★ ONE-COMMAND top-level full system launch
+│           ├── mission.launch.py      Mission stack bringup (Nav2 + AMCL + YOLO)
+│           └── rviz.launch.py         RViz2 launch helper
 ├── launch/
+│   ├── system.launch.py               Root top-level launch alias
 │   └── pointcloud_to_laserscan.launch.py
 ├── maps/
 │   ├── warehouse_map.pgm              Occupancy grid image
@@ -112,7 +117,7 @@ Nav2 coordinates path planning and motion control using the MPPI controller. Rec
 
 ### 3.5 YOLOv8 for Object Detection
 - **Model**: YOLOv8n (nano) running locally on CPU/GPU.
-- **Classes**: Person, backpack, bicycle (configurable in `yolo_params.yaml`).
+- **Classes**: Person, backpack, bicycle, chair, car, truck, plant (configurable in `yolo_params.yaml`).
 - **Standard Interface**: Publishes `vision_msgs/Detection2DArray` and annotated camera frames on `~/detections_image`.
 
 ### 3.6 Mission Orchestrator & Reporting
@@ -124,7 +129,7 @@ Nav2 coordinates path planning and motion control using the MPPI controller. Rec
 
 When running in simulation (`use_sim_time:=true`), ROS 2 nodes synchronize their internal timers, TF lookups, and lifecycle transitions to the `/clock` topic published by Gazebo. 
 
-Because Gazebo launches paused by default (allowing robot meshes and ROS controllers to finish loading into memory), **the simulation clock must be explicitly unpaused**:
+Because Gazebo launches paused by default (allowing robot meshes and ROS controllers to finish loading into memory), `system.launch.py` automatically triggers the clock unpause service after 5 seconds:
 
 ```bash
 ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
@@ -134,25 +139,22 @@ ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --r
 
 ## 5. Deployment Instructions
 
-### Mode 1: Combined / All-in-One Execution
+### Mode 1: ONE-COMMAND Top-Level Bringup (Recommended)
 
 ```bash
-# Terminal 1: Launch Gazebo Simulation
-ros2 launch clearpath_gz simulation.launch.py
+cd ~/ali/Project-Zero
+source /opt/ros/humble/setup.bash
+source install/setup.bash
 
-# Terminal 2: Unpause Gazebo Clock
-ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
-
-# Terminal 3: Launch Pre-Configured RViz2 (Navigation + Camera + YOLO)
-ros2 run rviz2 rviz2 \
-    -d ~/Project-Zero/src/jackal_vision/config/mission_viz.rviz \
-    --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
-
-# Terminal 4: Launch Full Mission Pipeline (AMCL + Nav2 + YOLO + Mission Node)
-ros2 launch jackal_mission mission.launch.py \
-    use_sim_time:=true \
-    map:=$(pwd)/maps/warehouse_map.yaml
+# Launches Gazebo, auto-unpauses clock, starts AMCL, Nav2, YOLO, RViz2, Camera View, and Mission
+ros2 launch jackal_mission system.launch.py
 ```
+
+*Optional Launch Flags:*
+* `sim:=false use_sim_time:=false` — Run on physical Jackal hardware.
+* `mission:=false` — Keep autonomous navigation in manual/RViz goal-setting mode.
+* `camera_view:=false` — Disable separate high-resolution rqt camera window.
+* `rviz:=false` — Run headless.
 
 ---
 
