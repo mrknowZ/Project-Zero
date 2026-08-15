@@ -1,14 +1,15 @@
 """
 Project Zero — SAFiR Lab
 Launch file for RViz2 with pre-configured mission visualizer.
+Properly namespaces /tf, /tf_static, and /robot_description for full 3D robot model rendering.
 """
 
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
+from launch_ros.actions import Node, PushRosNamespace
 
 
 def generate_launch_description():
@@ -35,19 +36,25 @@ def generate_launch_description():
         description='Path to RViz configuration file',
     )
 
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        namespace=LaunchConfiguration('namespace'),
-        arguments=['-d', LaunchConfiguration('rviz_config')],
-        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
-        output='screen',
-    )
+    rviz_group = GroupAction([
+        PushRosNamespace(LaunchConfiguration('namespace')),
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            arguments=['-d', LaunchConfiguration('rviz_config')],
+            parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+            remappings=[
+                ('/tf', 'tf'),
+                ('/tf_static', 'tf_static'),
+            ],
+            output='screen',
+        )
+    ])
 
     return LaunchDescription([
         namespace_arg,
         use_sim_time_arg,
         rviz_config_arg,
-        rviz_node,
+        rviz_group,
     ])
