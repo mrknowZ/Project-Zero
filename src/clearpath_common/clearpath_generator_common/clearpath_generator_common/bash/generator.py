@@ -32,7 +32,11 @@
 # modification, is not permitted without the express permission
 # of Clearpath Robotics.
 
-from datetime import datetime, UTC
+try:
+    from datetime import datetime, UTC
+except ImportError:
+    from datetime import datetime, timezone
+    UTC = timezone.utc
 
 from clearpath_config.common.types.discovery import Discovery
 from clearpath_generator_common.bash.writer import BashWriter
@@ -53,8 +57,9 @@ class BashGenerator(BaseGenerator):
         bash_writer.add_comment(f'Bash setup generated at {datetime.now(UTC)}')
 
         # Additional ROS sources
-        sources = self.clearpath_config.system.bash.additional_sources
-        envs = self.clearpath_config.system.bash.additional_envars
+        bash = getattr(self.clearpath_config.system, 'bash', None)
+        sources = getattr(bash, 'additional_sources', []) if bash else []
+        envs = getattr(bash, 'additional_envars', {}) if bash else {}
         if len(sources) > 0 or len(envs) > 0:
             bash_writer.add_comment('Additional bash configuration from robot.yaml')
             for s in sources:
@@ -106,16 +111,19 @@ class BashGenerator(BaseGenerator):
             bash_writer.add_unset('ROS_DISCOVERY_SERVER')
 
         # ROS automatic discovery range
-        bash_writer.add_export(
-            'ROS_AUTOMATIC_DISCOVERY_RANGE',
-            self.clearpath_config.system.middleware.automatic_discovery_range.upper(),
-        )
-        if len(self.clearpath_config.system.middleware.static_peers) > 0:
+        auto_range = getattr(self.clearpath_config.system.middleware, 'automatic_discovery_range', None)
+        if auto_range:
+            bash_writer.add_export(
+                'ROS_AUTOMATIC_DISCOVERY_RANGE',
+                auto_range.upper(),
+            )
+        static_peers = getattr(self.clearpath_config.system.middleware, 'static_peers', None)
+        if static_peers and len(static_peers) > 0:
             bash_writer.add_export(
                 'ROS_STATIC_PEERS',
-                f'"{";".join(self.clearpath_config.system.middleware.static_peers)}"',
+                f'"{";".join(static_peers)}"',
             )
-        else:
+        elif static_peers is not None:
             bash_writer.add_unset('ROS_STATIC_PEERS')
 
         bash_writer.close()

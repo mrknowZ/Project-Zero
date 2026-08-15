@@ -4,3 +4,12 @@ log/
 *.pyc
 __pycache__/
 .vscode/
+*.swp
+*.swo
+*~
+*.log
+*.pt
+frames_*.gv
+frames_*.pdf
+frames.gv
+frames.pdf

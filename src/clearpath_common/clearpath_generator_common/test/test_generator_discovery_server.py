@@ -29,7 +29,7 @@ import os
 import shutil
 
 from ament_index_python.packages import get_package_share_directory
-from clearpath_config.common.types.exception import (
+from clearpath_generator_common import (
     UnsupportedAccessoryException,
     UnsupportedPlatformException,
 )

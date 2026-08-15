@@ -31,6 +31,7 @@
 # of Clearpath Robotics.
 from typing import List
 
+import clearpath_generator_common  # noqa: F401
 from clearpath_config.common.types.exception import (
     UnsupportedAccessoryException,
 )

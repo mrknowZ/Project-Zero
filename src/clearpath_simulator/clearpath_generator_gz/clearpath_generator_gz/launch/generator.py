@@ -41,8 +41,8 @@ from clearpath_generator_gz.launch.sensors import SensorLaunch
 
 
 class GzLaunchGenerator(LaunchGenerator):
-    GZ_TO_ROS_TWIST = '@geometry_msgs/msg/TwistStamped[gz.msgs.Twist'
-    ROS_TO_GZ_TWIST = '@geometry_msgs/msg/TwistStamped]gz.msgs.Twist'
+    GZ_TO_ROS_TWIST = '@geometry_msgs/msg/Twist[gz.msgs.Twist'
+    ROS_TO_GZ_TWIST = '@geometry_msgs/msg/Twist]gz.msgs.Twist'
     GZ_TO_ROS_TF = '@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
 
     def __init__(self, setup_path: str = '/etc/clearpath/') -> None:

@@ -1,0 +1,25 @@
+# --------------------------------------------------
+# jackal_mission — Waypoints for the warehouse world
+# --------------------------------------------------
+# Coordinates are in the 'map' frame, matching the
+# saved warehouse_map.  Adjust these after inspecting
+# your map in RViz2.
+#
+# yaw is in radians (0 = facing +x, π/2 = facing +y).
+# --------------------------------------------------
+
+waypoints:
+  - name: shelf_a
+    x:  2.0
+    y:  1.0
+    yaw: 0.0
+
+  - name: shelf_b
+    x:  5.0
+    y: -2.0
+    yaw: 1.57
+
+  - name: loading_dock
+    x: -1.0
+    y: -3.0
+    yaw: 3.14

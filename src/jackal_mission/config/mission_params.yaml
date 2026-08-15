@@ -1,0 +1,19 @@
+# --------------------------------------------------
+# jackal_mission — Mission parameters
+# --------------------------------------------------
+
+mission_node:
+  ros__parameters:
+    namespace: 'j100_0000'
+
+    # Path to waypoints YAML.  Empty = use hardcoded defaults.
+    waypoints_file: ''
+
+    # Seconds to dwell at each waypoint collecting detections.
+    dwell_time_sec: 5.0
+
+    # Directory where JSON and text reports are written.
+    report_dir: '/tmp/jackal_mission_reports'
+
+    # Detection topic published by jackal_vision.
+    detection_topic: '/j100_0000/yolo_detector/detections'

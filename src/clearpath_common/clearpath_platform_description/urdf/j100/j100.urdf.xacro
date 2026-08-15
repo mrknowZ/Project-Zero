@@ -61,7 +61,7 @@
 
     <!-- Hardware  -->
     <xacro:if value="$(arg is_sim)">
-      <xacro:property name="hardware_plugin" value="gz_ros2_control/GazeboSimSystem"/>
+      <xacro:property name="hardware_plugin" value="ign_ros2_control/IgnitionSystem"/>
     </xacro:if>
     <xacro:unless value="$(arg is_sim)">
       <xacro:property name="hardware_plugin" value="clearpath_hardware_interfaces/J100Hardware"/>

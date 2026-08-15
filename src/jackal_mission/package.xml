@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>jackal_mission</name>
+  <version>0.1.0</version>
+  <description>
+    End-to-end mission orchestrator for the Clearpath Jackal.
+    Navigates a sequence of waypoints using Nav2, collects YOLO detections
+    at each waypoint, and generates a summary report.
+  </description>
+  <maintainer email="ali@safirlab.org">Ali</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>nav2_simple_commander</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>vision_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+
+  <!-- Launch-level dependencies (IncludeLaunchDescription) -->
+  <exec_depend>clearpath_nav2_demos</exec_depend>
+  <exec_depend>jackal_vision</exec_depend>
+  <exec_depend>pointcloud_to_laserscan</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

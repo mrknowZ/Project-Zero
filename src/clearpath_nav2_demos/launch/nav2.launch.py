@@ -99,6 +99,7 @@ def launch_setup(context, *args, **kwargs):
             # the only *.topic parameters are scan.topic, so rewrite all of them to point to
             # our desired scan_topic
             'topic': eval_scan_topic,
+            'use_sim_time': use_sim_time,
         },
         convert_types=True
     )

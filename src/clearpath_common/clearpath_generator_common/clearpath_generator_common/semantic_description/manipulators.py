@@ -116,8 +116,8 @@ class ManipulatorSemanticDescription():
         def __init__(self, manipulator):
             super().__init__(manipulator)
             urdf_parameters = dict(manipulator.get_urdf_parameters())
-            self.parameters[Robotiq2F140.PADDING] = f"{
-                urdf_parameters.get(Robotiq2F140.PADDING, 'true')}"
+            padding_val = urdf_parameters.get(Robotiq2F140.PADDING, 'true')
+            self.parameters[Robotiq2F140.PADDING] = f"{padding_val}"
 
     MODEL = {
         Franka.MANIPULATOR_MODEL: FrankaSemanticDescription,

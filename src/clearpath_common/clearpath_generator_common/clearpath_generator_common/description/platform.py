@@ -56,16 +56,20 @@ class PlatformDescription():
         pkg_clearpath_platform_description = 'clearpath_platform_description'
 
         def __init__(self, config: ClearpathConfig) -> None:
+            drivetrain = getattr(config.platform, 'drivetrain', None)
+            parameters = {}
+            if drivetrain:
+                parameters.update({
+                    'control': getattr(drivetrain, 'control', 'diff_4wd'),
+                    'front_wheels': getattr(drivetrain, 'front_wheels', 'outdoor'),
+                    'rear_wheels': getattr(drivetrain, 'rear_wheels', 'outdoor'),
+                })
             super().__init__(
                 package=self.pkg_clearpath_platform_description,
                 path=f'urdf/{config.get_platform_model()}/',
                 file=config.get_platform_model(),
                 macro=config.get_platform_model(),
-                parameters={
-                    'control': config.platform.drivetrain.control,
-                    'front_wheels': config.platform.drivetrain.front_wheels,
-                    'rear_wheels': config.platform.drivetrain.rear_wheels,
-                }
+                parameters=parameters if parameters else None
             )
 
     class GenericPlatform(BasePlatform):

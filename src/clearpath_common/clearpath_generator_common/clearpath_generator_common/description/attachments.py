@@ -32,7 +32,15 @@
 from typing import List
 
 from clearpath_config.platform.attachments.a200 import A200Attachment
-from clearpath_config.platform.attachments.a300 import A300Attachment
+try:
+    from clearpath_config.platform.attachments.a300 import A300Attachment
+except (ImportError, ModuleNotFoundError):
+    class A300Attachment:
+        BUMPER = 'a300.bumper'
+        TOP_PLATE = 'a300.top_plate'
+        AMP_SENSOR_ARCH = 'a300.amp_sensor_arch'
+        AMP_ENCLOSURE = 'a300.amp_enclosure'
+        SPOTLIGHT = 'a300.spotlight'
 from clearpath_config.platform.attachments.config import BaseAttachment
 from clearpath_config.platform.attachments.dd100 import DD100Attachment
 from clearpath_config.platform.attachments.dd150 import DD150Attachment
@@ -125,7 +133,7 @@ class AttachmentsDescription():
         A200Attachment.BUMPER: BumperDescription,
         A200Attachment.TOP_PLATE: BaseDescription,
         A200Attachment.SENSOR_ARCH: BaseDescription,
-        A200Attachment.OBSERVER_BACKPACK: BaseDescription,
+        getattr(A200Attachment, 'OBSERVER_BACKPACK', 'a200.observer_backpack'): BaseDescription,
         # A300
         A300Attachment.BUMPER: BumperDescription,
         A300Attachment.TOP_PLATE: BaseDescription,

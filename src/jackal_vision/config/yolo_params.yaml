@@ -1,0 +1,29 @@
+# --------------------------------------------------
+# jackal_vision — YOLOv8 detector parameters
+# --------------------------------------------------
+
+yolo_detector:
+  ros__parameters:
+    # Path to YOLO model weights.  'yolov8n.pt' will be auto-downloaded
+    # by ultralytics on first launch if not already present.
+    model_path: 'yolov8n.pt'
+
+    # Minimum confidence score to keep a detection.
+    confidence_threshold: 0.45
+
+    # Camera image topic to subscribe to.
+    # Adjust namespace / sensor name to match your robot.yaml.
+    image_topic: '/j100_0000/sensors/camera_0/color/image'
+
+    # Maximum inference rate (Hz).  Keep low on CPU-only machines.
+    detection_rate_hz: 5.0
+
+    # COCO class names to detect.  Must match names in the YOLO model.
+    # At least three categories are required by the project spec.
+    target_classes:
+      - person
+      - backpack
+      - bicycle
+
+    # Inference device: 'cpu' or GPU index like '0'.
+    device: 'cpu'

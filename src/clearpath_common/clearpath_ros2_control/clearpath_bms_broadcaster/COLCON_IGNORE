@@ -1,0 +1,1 @@
+# Ignored on ROS 2 Humble due to Jazzy-only control_msgs/msg/battery_state_array.hpp dependency.

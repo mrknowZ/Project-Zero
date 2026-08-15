@@ -30,7 +30,9 @@ from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
+    Command,
     EnvironmentVariable,
+    FindExecutable,
     LaunchConfiguration,
     PathJoinSubstitution
 )
@@ -94,6 +96,26 @@ def launch_setup(context, *args, **kwargs):
     launch_file_sensors_service = PathJoinSubstitution([
         setup_path, 'sensors/launch', 'sensors-service.launch.py'])
 
+    robot_urdf = PathJoinSubstitution([
+        setup_path, 'robot.urdf.xacro'])
+    config_control = PathJoinSubstitution([
+        setup_path, 'platform/config/control.yaml'])
+
+    robot_description_content = Command([
+        PathJoinSubstitution([FindExecutable(name='xacro')]),
+        ' ',
+        robot_urdf,
+        ' ',
+        'is_sim:=',
+        use_sim_time,
+        ' ',
+        'gazebo_controllers:=',
+        config_control,
+        ' ',
+        'namespace:=',
+        namespace,
+    ])
+
     group_action_spawn_robot = GroupAction([
 
         IncludeLaunchDescription(
@@ -112,13 +134,12 @@ def launch_setup(context, *args, **kwargs):
         Node(
             package='ros_gz_sim',
             executable='create',
-            namespace=namespace,
             arguments=['-name', robot_name,
                        '-x', x,
                        '-y', y,
                        '-z', z,
                        '-Y', yaw,
-                       '-topic', 'robot_description'],
+                       '-string', robot_description_content],
             output='screen'
         ),
     ])

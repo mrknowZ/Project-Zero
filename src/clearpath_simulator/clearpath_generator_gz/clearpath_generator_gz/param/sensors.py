@@ -48,10 +48,14 @@ from clearpath_config.sensors.types.gps import (
 )
 from clearpath_config.sensors.types.imu import BaseIMU, CHRoboticsUM6, Microstrain, RedshiftUM7
 from clearpath_config.sensors.types.lidars_2d import BaseLidar2D, HokuyoUST, SickLMS1XX
+try:
+    from clearpath_config.sensors.types.lidars_3d import SeyondLidar
+except (ImportError, AttributeError):
+    class SeyondLidar:
+        SENSOR_MODEL = 'seyond_lidar'
 from clearpath_config.sensors.types.lidars_3d import (
     BaseLidar3D,
     OusterOS1,
-    SeyondLidar,
     VelodyneLidar,
 )
 from clearpath_config.sensors.types.sensor import BaseSensor

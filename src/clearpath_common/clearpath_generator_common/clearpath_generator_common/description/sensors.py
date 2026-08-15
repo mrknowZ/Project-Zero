@@ -45,20 +45,37 @@ from clearpath_config.sensors.types.imu import (
     Microstrain,
     RedshiftUM7
 )
-from clearpath_config.sensors.types.ins import (
-    BaseINS,
-    Fixposition,
-)
+try:
+    from clearpath_config.sensors.types.ins import (
+        BaseINS,
+        Fixposition,
+    )
+except (ImportError, ModuleNotFoundError):
+    class BaseINS:
+        pass
+    class Fixposition:
+        SENSOR_MODEL = 'fixposition'
+
 from clearpath_config.sensors.types.lidars_2d import BaseLidar2D, HokuyoUST, SickLMS1XX
+
+try:
+    from clearpath_config.sensors.types.lidars_3d import SeyondLidar
+except (ImportError, AttributeError):
+    class SeyondLidar:
+        SENSOR_MODEL = 'seyond_lidar'
+
 from clearpath_config.sensors.types.lidars_3d import (
     BaseLidar3D,
     OusterOS1,
-    SeyondLidar,
     VelodyneLidar,
 )
-from clearpath_config.sensors.types.ptu import (
-    FlirPTU,
-)
+try:
+    from clearpath_config.sensors.types.ptu import (
+        FlirPTU,
+    )
+except (ImportError, ModuleNotFoundError):
+    class FlirPTU:
+        SENSOR_MODEL = 'flir_ptu'
 from clearpath_config.sensors.types.sensor import BaseSensor
 
 

@@ -32,6 +32,7 @@
 # modification, is not permitted without the express permission
 # of Clearpath Robotics.
 
+import clearpath_generator_common  # noqa: F401
 from clearpath_config.common.types.exception import (
     UnsupportedAccessoryException,
     UnsupportedMiddlewareException,

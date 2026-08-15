@@ -39,14 +39,28 @@ from clearpath_config.common.utils.dictionary import merge_dict, replace_dict_it
 from clearpath_config.manipulators.types.arms import Franka
 from clearpath_config.manipulators.types.grippers import FrankaGripper
 from clearpath_config.platform.battery import BatteryConfig
-from clearpath_config.platform.mcu import MCUConfig
-from clearpath_config.platform.wireless import PeplinkRouter
+try:
+    from clearpath_config.platform.mcu import MCUConfig
+except (ImportError, ModuleNotFoundError):
+    class MCUConfig:
+        PROTON = 'proton'
+
+try:
+    from clearpath_config.platform.wireless import PeplinkRouter
+except (ImportError, ModuleNotFoundError):
+    class PeplinkRouter:
+        MODEL = 'peplink'
+
 from clearpath_config.sensors.types.cameras import BaseCamera, IntelRealsense
 from clearpath_config.sensors.types.gps import BaseGPS, NMEA
 from clearpath_config.sensors.types.imu import BaseIMU, PhidgetsSpatial
 from clearpath_config.sensors.types.lidars_2d import BaseLidar2D
 from clearpath_config.sensors.types.lidars_3d import BaseLidar3D
-from clearpath_config.sensors.types.ptu import BasePTU
+try:
+    from clearpath_config.sensors.types.ptu import BasePTU
+except (ImportError, ModuleNotFoundError):
+    class BasePTU:
+        SENSOR_TYPE = 'ptu'
 from clearpath_config.sensors.types.sensor import BaseSensor
 from clearpath_generator_common.common import Package, ParamFile
 from clearpath_generator_common.param.writer import ParamWriter
@@ -297,7 +311,8 @@ class PlatformParam():
             super().generate_parameters(use_sim_time)
 
             platform_model = self.clearpath_config.get_platform_model()
-            mcu_protocol = self.clearpath_config.platform.mcu.protocol
+            mcu = getattr(self.clearpath_config.platform, 'mcu', None)
+            mcu_protocol = getattr(mcu, 'protocol', None) if mcu else None
 
             # Add MCU diagnostic category for all platforms except A200
             if platform_model != Platform.A200:
@@ -396,21 +411,23 @@ class PlatformParam():
             networking_contains = []
             networking_expected = []
 
-            if self.clearpath_config.platform.wireless.enable_wireless_watcher:
-                networking_contains.append('Wi-Fi')
-                networking_expected.append('wireless_watcher: Wi-Fi Monitor')
+            wireless = getattr(self.clearpath_config.platform, 'wireless', None)
+            if wireless:
+                if getattr(wireless, 'enable_wireless_watcher', False):
+                    networking_contains.append('Wi-Fi')
+                    networking_expected.append('wireless_watcher: Wi-Fi Monitor')
 
-            if self.clearpath_config.platform.wireless.router:
-                if self.clearpath_config.platform.wireless.router == PeplinkRouter.MODEL:
-                    networking_contains.append('Router')
-                    networking_expected.append('router_node: Router')
-                # Put additional supported router hardware here...
+                if getattr(wireless, 'router', None):
+                    if wireless.router == PeplinkRouter.MODEL:
+                        networking_contains.append('Router')
+                        networking_expected.append('router_node: Router')
+                    # Put additional supported router hardware here...
 
-            if self.clearpath_config.platform.wireless.base_station:
-                if self.clearpath_config.platform.wireless.base_station == PeplinkRouter.MODEL:
-                    networking_contains.append('Base Station')
-                    networking_expected.append('base_station_node: Base Station')
-                # Put additional supported base station hardware here...
+                if getattr(wireless, 'base_station', None):
+                    if wireless.base_station == PeplinkRouter.MODEL:
+                        networking_contains.append('Base Station')
+                        networking_expected.append('base_station_node: Base Station')
+                    # Put additional supported base station hardware here...
 
             if len(networking_contains) > 0:
                 self.param_file.update({
@@ -549,7 +566,7 @@ class PlatformParam():
             # Set expected BMS rate based on the platform battery model
             bms_state_rate = 10.0
             bms_state_tolerance = 0.15
-            if (self.clearpath_config.platform.battery.model in [BatteryConfig.S_24V20_U1]):
+            if (self.clearpath_config.platform.battery.model in [getattr(BatteryConfig, 'S_24V20_U1', 's_24v20_u1')]):
                 bms_state_rate = 2.5
                 bms_state_tolerance = 0.2
             elif (self.clearpath_config.platform.battery.model in
@@ -563,6 +580,8 @@ class PlatformParam():
                 bms_state_rate = 1.8
                 bms_state_tolerance = 0.25
 
+            mcu = getattr(self.clearpath_config.platform, 'mcu', None)
+            mcu_protocol = getattr(mcu, 'protocol', None) if mcu else None
             self.param_file.update({
                 self.DIAGNOSTIC_UPDATER_NODE: {
                     'ros_distro': ROS_DISTRO,
@@ -570,7 +589,7 @@ class PlatformParam():
                     'installed_apt_firmware_version': installed_apt_firmware_version,
                     'bms_state_rate': bms_state_rate,
                     'bms_state_tolerance': bms_state_tolerance,
-                    'mcu_protocol': self.clearpath_config.platform.mcu.protocol
+                    'mcu_protocol': mcu_protocol
                 }
             })
 
@@ -593,11 +612,14 @@ class PlatformParam():
                 })
 
             if platform_model not in (Platform.A300, Platform.A200):
+                imu_type = 'sensor_msgs/msg/Imu'
+                if hasattr(BaseIMU.TOPICS, 'TYPE') and BaseIMU.TOPICS.DATA in BaseIMU.TOPICS.TYPE:
+                    imu_type = BaseIMU.TOPICS.TYPE[BaseIMU.TOPICS.DATA]
                 self.param_file.update({
                     self.DIAGNOSTIC_UPDATER_NODE: {
                         'topics': {
                             'sensors/imu_0/data': {
-                                'type': BaseIMU.TOPICS.TYPE[BaseIMU.TOPICS.DATA],
+                                'type': imu_type,
                                 'rate': 50.0
                             }
                         }
@@ -605,11 +627,14 @@ class PlatformParam():
                 })
 
             if platform_model == Platform.J100:
+                gps_type = 'sensor_msgs/msg/NavSatFix'
+                if hasattr(NMEA.TOPICS, 'TYPE') and NMEA.TOPICS.FIX in NMEA.TOPICS.TYPE:
+                    gps_type = NMEA.TOPICS.TYPE[NMEA.TOPICS.FIX]
                 self.param_file.update({
                     self.DIAGNOSTIC_UPDATER_NODE: {
                         'topics': {
                             'sensors/gps_0/fix': {
-                                'type': NMEA.TOPICS.TYPE[NMEA.TOPICS.FIX],
+                                'type': gps_type,
                                 'rate': 10.0
                             }
                         }
@@ -669,8 +694,35 @@ class PlatformParam():
             rate = float(sensor.get_topic_rate(topic_key))
             if rate == 0.0:
                 return
-            self.diag_dict[sensor.get_topic_name(topic_key, local=True)] = {
-                'type': sensor.get_topic_type(topic_key),
+
+            if hasattr(sensor, 'get_topic_name'):
+                topic_name = sensor.get_topic_name(topic_key, local=True)
+            elif hasattr(sensor, 'get_topic'):
+                topic_name = sensor.get_topic(topic_key).lstrip('/')
+            else:
+                topic_name = f'sensors/{sensor.name}/{topic_key}'
+
+            if hasattr(sensor, 'get_topic_type'):
+                topic_type = sensor.get_topic_type(topic_key)
+            elif hasattr(sensor.TOPICS, 'TYPE') and topic_key in sensor.TOPICS.TYPE:
+                topic_type = sensor.TOPICS.TYPE[topic_key]
+            else:
+                key_lower = topic_key.lower()
+                if 'image' in key_lower:
+                    topic_type = 'sensor_msgs/msg/Image'
+                elif 'point' in key_lower:
+                    topic_type = 'sensor_msgs/msg/PointCloud2'
+                elif 'scan' in key_lower:
+                    topic_type = 'sensor_msgs/msg/LaserScan'
+                elif 'fix' in key_lower:
+                    topic_type = 'sensor_msgs/msg/NavSatFix'
+                elif 'mag' in key_lower:
+                    topic_type = 'sensor_msgs/msg/MagneticField'
+                else:
+                    topic_type = 'sensor_msgs/msg/Imu'
+
+            self.diag_dict[topic_name] = {
+                'type': topic_type,
                 'rate': rate
             }
 
@@ -810,7 +862,14 @@ class PlatformParam():
             super().__init__(parameter, clearpath_config, param_path)
             if self.platform != Platform.GENERIC:
                 self.default_parameter_file_path = f'config/{self.platform}/control'
-                self.default_parameter = self.clearpath_config.platform.drivetrain.control
+                drivetrain = getattr(self.clearpath_config.platform, 'drivetrain', None)
+                if drivetrain and getattr(drivetrain, 'control', None):
+                    self.default_parameter = drivetrain.control
+                else:
+                    if self.platform in (Platform.DD100, Platform.DD150):
+                        self.default_parameter = 'diff_fwd'
+                    else:
+                        self.default_parameter = 'diff_4wd'
 
     class TeleopInteractiveMarkers(BaseParam):
         def __init__(self,

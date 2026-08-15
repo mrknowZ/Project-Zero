@@ -36,7 +36,11 @@ from clearpath_config.sensors.types.cameras import (
     IntelRealsense,
     StereolabsZed
 )
-from clearpath_config.sensors.types.ptu import BasePTU
+try:
+    from clearpath_config.sensors.types.ptu import BasePTU
+except (ImportError, ModuleNotFoundError):
+    class BasePTU:
+        SENSOR_TYPE = 'ptu'
 from clearpath_config.sensors.types.sensor import BaseSensor
 from clearpath_generator_common.common import LaunchFile, ParamFile
 from clearpath_generator_common.launch.writer import LaunchWriter

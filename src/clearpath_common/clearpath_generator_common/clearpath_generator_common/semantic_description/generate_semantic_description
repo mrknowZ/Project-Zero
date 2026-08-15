@@ -32,7 +32,7 @@
 # modification, is not permitted without the express permission
 # of Clearpath Robotics.
 import os
-
+import clearpath_generator_common  # noqa: F401
 from clearpath_config.common.types.exception import (
     UnsupportedAccessoryException,
     UnsupportedMiddlewareException,
@@ -58,15 +58,18 @@ def main():
             executable_name='moveit_collision_updater',
             package_name='clearpath_generator_common'
         )
-        argv = [
-            '--urdf', os.path.join(setup_path, 'robot.urdf.xacro'),
-            '--srdf', os.path.join(setup_path, 'robot.srdf.xacro'),
-            '--output', os.path.join(setup_path, 'robot.srdf'),
-            '--trials', '100000',
-        ]
-        run_executable(path=path, argv=argv)
+        if path:
+            argv = [
+                '--urdf', os.path.join(setup_path, 'robot.urdf.xacro'),
+                '--srdf', os.path.join(setup_path, 'robot.srdf.xacro'),
+                '--output', os.path.join(setup_path, 'robot.srdf'),
+                '--trials', '100000',
+            ]
+            run_executable(path=path, argv=argv)
         # Delete pseudo package
-        os.remove(os.path.join(setup_path, 'package.xml'))
+        pkg_xml = os.path.join(setup_path, 'package.xml')
+        if os.path.exists(pkg_xml):
+            os.remove(pkg_xml)
     except UnsupportedAccessoryException as err:
         print(f'[ERROR] Unable to generate semantic description: {err}')
     except UnsupportedMiddlewareException as err:
