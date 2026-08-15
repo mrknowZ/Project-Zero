@@ -33,8 +33,9 @@ graph TD
 
 ### Terminal 1 — Start Gazebo Simulation
 ```bash
+cd ~/ali/Project-Zero
 source /opt/ros/humble/setup.bash
-source ~/Project-Zero/install/setup.bash
+source install/setup.bash
 ros2 launch clearpath_gz simulation.launch.py
 ```
 
@@ -51,21 +52,32 @@ ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --r
 > * **LiDAR Scan**: 2D laser scan points aligned with warehouse walls and obstacles.
 > * **YOLO Vision Inset**: Live camera feed with color-coded bounding boxes and detection labels.
 
+*Option A (Recommended — One simple launch command):*
 ```bash
+cd ~/ali/Project-Zero
 source /opt/ros/humble/setup.bash
-source ~/Project-Zero/install/setup.bash
+source install/setup.bash
+ros2 launch jackal_vision rviz.launch.py
+```
+
+*Option B (Direct CLI command):*
+```bash
+cd ~/ali/Project-Zero
+source /opt/ros/humble/setup.bash
+source install/setup.bash
 ros2 run rviz2 rviz2 \
-    -d ~/Project-Zero/src/jackal_vision/config/mission_viz.rviz \
+    -d ~/ali/Project-Zero/src/jackal_vision/config/mission_viz.rviz \
     --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
 ```
 
 ### Terminal 4 — Launch Autonomous Mission & YOLO Detection
 ```bash
+cd ~/ali/Project-Zero
 source /opt/ros/humble/setup.bash
-source ~/Project-Zero/install/setup.bash
+source install/setup.bash
 ros2 launch jackal_mission mission.launch.py \
     use_sim_time:=true \
-    map:=~/Project-Zero/maps/warehouse_map.yaml
+    map:=~/ali/Project-Zero/maps/warehouse_map.yaml
 ```
 
 *(Optional) Terminal 5 — Standalone High-Resolution YOLO Camera Viewer:*
