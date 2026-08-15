@@ -1,0 +1,18 @@
+# --------------------------------------------------
+# Small obstacle-avoidance mission for warehouse
+# --------------------------------------------------
+waypoints:
+  - name: corridor_entry
+    x: 2.5
+    y: 0.5
+    yaw: 0.0
+
+  - name: behind_shelves
+    x: 4.5
+    y: -1.5
+    yaw: 1.57
+
+  - name: return_to_start
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
