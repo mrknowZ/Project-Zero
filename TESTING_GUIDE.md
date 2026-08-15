@@ -19,26 +19,38 @@ source install/setup.bash
 
 ---
 
-## 1. Quick Execution Options
+## 1. Complete Visual Mission Execution (All-in-One)
 
-### Option A: Combined / All-in-One Execution (Recommended)
+Follow these 4 terminals to run the entire pipeline while **visually watching the robot move and detect objects in real-time**:
 
-Run the full end-to-end autonomous mission (Gazebo + PointCloud Bridge + AMCL + Nav2 + YOLOv8 + Mission Sequencer + RViz) using just 3 terminal windows:
+```mermaid
+graph TD
+    T1[T1: Gazebo Simulation] -->|publishes /clock & sensors| T2[T2: Unpause Clock]
+    T2 -->|enables physics| T3[T3: RViz2 & Visualizer]
+    T3 -->|displays robot & detections| T4[T4: Mission Launch]
+    T4 -->|Nav2 + YOLOv8 + Sequencer| Live[Live Autonomous Navigation & Object Detection]
+```
 
-#### Terminal 1 — Start Gazebo Simulation
+### Terminal 1 — Start Gazebo Simulation
 ```bash
 source /opt/ros/humble/setup.bash
 source ~/Project-Zero/install/setup.bash
 ros2 launch clearpath_gz simulation.launch.py
 ```
 
-#### Terminal 2 — Unpause Gazebo Simulation Clock
-> **Why?** Nodes using `use_sim_time:=true` require Gazebo's `/clock` topic to advance. Gazebo starts paused by default while loading assets.
+### Terminal 2 — Unpause Simulation Clock
 ```bash
 ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
 ```
 
-#### Terminal 3 — Launch Pre-Configured RViz2 Visualizer (Map + Robot + LiDAR + YOLO + Camera)
+### Terminal 3 — Launch Pre-Configured RViz2 Visualizer
+> **What you will see in RViz2:**
+> * **Robot Model & Map**: 3D Jackal navigating over the 2D warehouse map.
+> * **Nav2 Costmaps & Paths**: Red global path and blue local trajectory planner.
+> * **Localization (AMCL)**: Green particle cloud tracking robot pose in real time.
+> * **LiDAR Scan**: 2D laser scan points aligned with warehouse walls and obstacles.
+> * **YOLO Vision Inset**: Live camera feed with color-coded bounding boxes and detection labels.
+
 ```bash
 source /opt/ros/humble/setup.bash
 source ~/Project-Zero/install/setup.bash
@@ -47,13 +59,19 @@ ros2 run rviz2 rviz2 \
     --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
 ```
 
-#### Terminal 4 — Launch Full Mission Pipeline
+### Terminal 4 — Launch Autonomous Mission & YOLO Detection
 ```bash
 source /opt/ros/humble/setup.bash
 source ~/Project-Zero/install/setup.bash
 ros2 launch jackal_mission mission.launch.py \
     use_sim_time:=true \
     map:=~/Project-Zero/maps/warehouse_map.yaml
+```
+
+*(Optional) Terminal 5 — Standalone High-Resolution YOLO Camera Viewer:*
+```bash
+source /opt/ros/humble/setup.bash
+ros2 run rqt_image_view rqt_image_view /j100_0000/yolo_detector/detections_image
 ```
 
 ---
