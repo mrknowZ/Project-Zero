@@ -5,11 +5,10 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /TF1/Frames1
-        - /LaserScan1
+        - /RobotModel1
+        - /Map1
         - /YOLO Detections1
-        - /Camera Feed1
-      Splitter Ratio: 0.5833333134651184
+      Splitter Ratio: 0.58
     Tree Height: 693
   - Class: rviz_common/Selection
     Name: Selection
@@ -17,7 +16,7 @@ Panels:
     Expanded:
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.5886790156364441
+    Splitter Ratio: 0.58
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
@@ -34,7 +33,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.029999999329447746
+        Line Width: 0.03
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -53,7 +52,7 @@ Visualization Manager:
       Description Source: Topic
       Description Topic:
         Depth: 5
-        Durability Policy: Transient Local
+        Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: robot_description
@@ -64,6 +63,184 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_0_bottom_screw_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_0_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_1_bottom_screw_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        chassis_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fath_pivot_0_hinge_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fath_pivot_0_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fath_pivot_0_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        fath_pivot_1_hinge_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fath_pivot_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fath_pivot_1_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_bumper_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_extension_0_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_extension_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_mount_0_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_mount_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_1_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        imu_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        lidar2d_0_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        lidar2d_0_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lidar2d_1_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        lidar2d_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lidar3d_0_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lidar3d_0_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        navsat_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_bumper_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rear_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        velodyne_mount_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Mass Properties:
         Inertia: false
         Mass: false
@@ -329,7 +506,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -341,7 +518,7 @@ Visualization Manager:
     - Class: rviz_default_plugins/SetInitialPose
       Covariance x: 0.25
       Covariance y: 0.25
-      Covariance yaw: 0.06853891909122467
+      Covariance yaw: 0.0685
       Topic:
         Depth: 5
         Durability Policy: Volatile
