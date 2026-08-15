@@ -64,9 +64,9 @@ Detect at least three object categories (e.g. backpack, car, bicycle, person). A
 ### 7. System Integration
 A single demonstrable mission: start the robot → load the map → localize → navigate to multiple waypoints → detect objects encountered along the way → report results (e.g., a log, a summary message, a simple file, a video).
 
-## Quick Start & Execution
+## Execution Guide
 
-### 1. Build
+### 1. Build Workspace
 ```bash
 source /opt/ros/humble/setup.bash
 pip install ultralytics opencv-python-headless
@@ -75,26 +75,41 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-### 2. Run Full Mission (Combined Mode)
+---
+
+### 2. ONE-COMMAND Top-Level Bringup (Everything in 1 Command)
+Launches Gazebo Harmonic simulation, auto-unpauses clock, starts 3D-to-2D LiDAR bridge, AMCL localization, Nav2 stack, YOLOv8 vision, RViz2 visualizer, and the multi-waypoint mission orchestrator:
+
 ```bash
-# Terminal 1: Simulation
-ros2 launch clearpath_gz simulation.launch.py
-
-# Terminal 2: Unpause Gazebo Clock (mandatory for use_sim_time)
-ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
-
-# Terminal 3: Pre-configured RViz2 (Nav2 + Camera + YOLO Detections)
-ros2 run rviz2 rviz2 \
-    -d src/jackal_vision/config/mission_viz.rviz \
-    --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true
-
-# Terminal 4: Mission Pipeline
-ros2 launch jackal_mission mission.launch.py \
-    use_sim_time:=true \
-    map:=$(pwd)/maps/warehouse_map.yaml
+ros2 launch jackal_mission system.launch.py
 ```
 
-> For step-by-step modular commands (running SLAM, AMCL, Nav2, YOLO, RViz individually) and evidence capture, refer to [TESTING_GUIDE.md](TESTING_GUIDE.md) and [TECHNICAL_NOTE.md](TECHNICAL_NOTE.md).
+*Optional Launch Arguments:*
+* Disable mission auto-start: `mission:=false`
+* Run on real robot (no simulation): `sim:=false use_sim_time:=false`
+* Disable RViz GUI: `rviz:=false`
+* Custom map: `map:=/path/to/custom_map.yaml`
+
+---
+
+### 3. Modular Individual Commands (Run Components Separately)
+
+If you want to run or test components individually in separate terminals:
+
+| Component | Command |
+|---|---|
+| **1. Gazebo Simulation** | `ros2 launch clearpath_gz simulation.launch.py` |
+| **2. Unpause Clock** | `ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'` |
+| **3. RViz2 Visualizer** | `ros2 launch jackal_vision rviz.launch.py` |
+| **4. SLAM Mapping** | `ros2 launch clearpath_nav2_demos slam.launch.py use_sim_time:=true` |
+| **5. Save SLAM Map** | `ros2 run nav2_map_server map_saver_cli -f ~/ali/Project-Zero/maps/my_map --ros-args -r __ns:=/j100_0000` |
+| **6. Localization (AMCL + Map)** | `ros2 launch clearpath_nav2_demos localization.launch.py use_sim_time:=true map:=$(pwd)/maps/warehouse_map.yaml` |
+| **7. Nav2 Autonomy Stack** | `ros2 launch clearpath_nav2_demos nav2.launch.py use_sim_time:=true` |
+| **8. YOLOv8 Vision Pipeline** | `ros2 launch jackal_vision vision.launch.py use_sim_time:=true` |
+| **9. Autonomous Mission Node** | `ros2 run jackal_mission mission_node --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true` |
+| **10. Manual Keyboard Teleop** | `ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/j100_0000/cmd_vel` |
+
+> For complete testing workflows, QoS settings, and evidence verification, see [TESTING_GUIDE.md](TESTING_GUIDE.md).
 
 ## Deliverables
 

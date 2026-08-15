@@ -9,7 +9,7 @@ Step-by-step commands to run, test, and **capture evidence** for the Clearpath J
 Before launching any nodes, build the workspace and install required dependencies:
 
 ```bash
-cd ~/Project-Zero
+cd ~/ali/Project-Zero
 source /opt/ros/humble/setup.bash
 pip install ultralytics opencv-python-headless
 rosdep install -r --from-paths src -i -y
@@ -19,30 +19,32 @@ source install/setup.bash
 
 ---
 
-## 1. Complete Visual Mission Execution (All-in-One)
+## 1. Top-Level Launch (ONE COMMAND — Complete System)
 
-Follow these 4 terminals to run the entire pipeline while **visually watching the robot move and detect objects in real-time**:
+Run the entire autonomy and vision pipeline with a single command:
 
-```mermaid
-graph TD
-    T1[T1: Gazebo Simulation] -->|publishes /clock & sensors| T2[T2: Unpause Clock]
-    T2 -->|enables physics| T3[T3: RViz2 & Visualizer]
-    T3 -->|displays robot & detections| T4[T4: Mission Launch]
-    T4 -->|Nav2 + YOLOv8 + Sequencer| Live[Live Autonomous Navigation & Object Detection]
-```
-
-### Terminal 1 — Start Gazebo Simulation
 ```bash
 cd ~/ali/Project-Zero
 source /opt/ros/humble/setup.bash
 source install/setup.bash
-ros2 launch clearpath_gz simulation.launch.py
+ros2 launch jackal_mission system.launch.py
 ```
 
-### Terminal 2 — Unpause Simulation Clock
-```bash
-ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
-```
+> **What happens automatically:**
+> 1. Gazebo Harmonic starts with the Jackal robot in the warehouse environment.
+> 2. The simulation clock is unpaused automatically after 5 seconds.
+> 3. Pointcloud-to-laserscan node bridges 3D LiDAR into 2D laser scan topics.
+> 4. Map server and AMCL load `warehouse_map.yaml` and initialize robot localization.
+> 5. Nav2 autonomy controllers, planners, costmaps, and behavior trees activate.
+> 6. YOLOv8 object detector begins real-time inference on the onboard camera.
+> 7. RViz2 visualizer opens displaying the map, 3D Jackal chassis, costmaps, LiDAR, and YOLO feed.
+> 8. Autonomous mission orchestrator begins waypoint navigation with obstacle avoidance.
+
+---
+
+## 2. Multi-Terminal Execution (Visual Testing)
+
+If you prefer to launch the major sub-systems in separate terminals:
 
 ### Terminal 3 — Launch Pre-Configured RViz2 Visualizer
 > **What you will see in RViz2:**
