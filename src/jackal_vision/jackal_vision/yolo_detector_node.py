@@ -3,11 +3,10 @@ Project Zero — SAFiR Lab
 YOLO Object Detection Node
 
 Subscribes to an RGB camera image topic, runs YOLOv8 inference, and publishes
-vision_msgs/Detection2DArray.  An annotated image is also published for
-RViz2 visualisation.
+vision_msgs/Detection2DArray. An annotated image is also published for
+RViz2 visualisation with color-coded bounding boxes.
 
-Detected classes are configurable via parameters; the default set satisfies the
-project requirement of ≥ 3 categories (person, backpack, bicycle).
+Supports common objects: person, bicycle, tree / plant, car, chair, bottle, etc.
 """
 
 import rclpy
@@ -29,6 +28,32 @@ import numpy as np
 from cv_bridge import CvBridge
 
 
+# Common aliases mapped to COCO class names
+CLASS_SYNONYMS = {
+    'tree': 'potted plant',
+    'trees': 'potted plant',
+    'plant': 'potted plant',
+    'plants': 'potted plant',
+    'bike': 'bicycle',
+    'motorbike': 'motorcycle',
+    'auto': 'car',
+    'automobile': 'car',
+    'bag': 'backpack',
+}
+
+# Color palette for different object types (BGR)
+COLOR_PALETTE = [
+    (0, 255, 0),    # Bright Green
+    (255, 140, 0),  # Deep Sky Blue
+    (0, 165, 255),  # Orange
+    (238, 130, 238),# Violet
+    (0, 215, 255),  # Gold
+    (255, 0, 255),  # Magenta
+    (0, 255, 255),  # Yellow
+    (144, 238, 144),# Light Green
+]
+
+
 class YoloDetectorNode(Node):
     """ROS2 node that wraps Ultralytics YOLOv8 for real-time detection."""
 
@@ -37,13 +62,16 @@ class YoloDetectorNode(Node):
 
         # --------------- Parameters ---------------
         self.declare_parameter('model_path', 'yolov8n.pt')
-        self.declare_parameter('confidence_threshold', 0.45)
+        self.declare_parameter('confidence_threshold', 0.40)
         self.declare_parameter('image_topic',
                                '/j100_0000/sensors/camera_0/color/image')
         self.declare_parameter('detection_rate_hz', 5.0)
         self.declare_parameter(
             'target_classes',
-            ['person', 'backpack', 'bicycle'],
+            [
+                'person', 'bicycle', 'tree', 'potted plant', 'car',
+                'truck', 'bus', 'chair', 'bench', 'bottle', 'backpack'
+            ],
         )
         self.declare_parameter('device', 'cpu')  # 'cpu' or '0' for GPU
 
@@ -51,7 +79,7 @@ class YoloDetectorNode(Node):
         self.conf_thresh = self.get_parameter('confidence_threshold').value
         image_topic = self.get_parameter('image_topic').value
         rate_hz = self.get_parameter('detection_rate_hz').value
-        self.target_classes = self.get_parameter('target_classes').value
+        raw_target_classes = self.get_parameter('target_classes').value
         device = self.get_parameter('device').value
 
         # --------------- YOLO model ---------------
@@ -87,13 +115,25 @@ class YoloDetectorNode(Node):
         # Build a set of target class indices from COCO names
         self.coco_names = self.model.names  # dict {int: str}
         self.target_ids = set()
-        for cls_name in self.target_classes:
-            for idx, name in self.coco_names.items():
-                if name == cls_name:
-                    self.target_ids.add(idx)
-        self.get_logger().info(
-            f'Tracking classes: {self.target_classes} -> IDs {self.target_ids}'
-        )
+
+        # Resolve synonyms and match against COCO names
+        normalized_targets = []
+        for cls_name in raw_target_classes:
+            name_lower = cls_name.lower().strip()
+            resolved = CLASS_SYNONYMS.get(name_lower, name_lower)
+            normalized_targets.append(resolved)
+
+        if not normalized_targets or 'all' in normalized_targets:
+            self.target_ids = set(self.coco_names.keys())
+            self.get_logger().info('Tracking ALL 80 COCO object classes.')
+        else:
+            for cls_name in normalized_targets:
+                for idx, name in self.coco_names.items():
+                    if name.lower() == cls_name:
+                        self.target_ids.add(idx)
+            self.get_logger().info(
+                f'Tracking classes: {raw_target_classes} -> IDs {self.target_ids}'
+            )
 
         # --------------- ROS I/O ---------------
         self.bridge = CvBridge()
@@ -170,17 +210,20 @@ class YoloDetectorNode(Node):
                 conf = float(box.conf[0])
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
 
+                cls_name = self.coco_names.get(cls_id, str(cls_id))
+                # For presentation, if potted plant is detected, label as plant/tree
+                display_name = 'tree/plant' if cls_name == 'potted plant' else cls_name
+
                 # Populate Detection2D
                 det = Detection2D()
                 det.header = msg.header
 
                 hyp = ObjectHypothesisWithPose()
-                # ROS2 Humble vision_msgs: hyp.hypothesis has class_id (str) and score (float)
-                hyp.hypothesis.class_id = str(self.coco_names.get(cls_id, cls_id))
+                hyp.hypothesis.class_id = cls_name
                 hyp.hypothesis.score = float(conf)
                 det.results.append(hyp)
 
-                # Bounding box (center as vision_msgs/Pose2D with position + size)
+                # Bounding box
                 det.bbox.center.position.x = float((x1 + x2) / 2.0)
                 det.bbox.center.position.y = float((y1 + y2) / 2.0)
                 det.bbox.center.theta = 0.0
@@ -189,19 +232,32 @@ class YoloDetectorNode(Node):
 
                 det_array.detections.append(det)
 
+                # Select box color
+                color = COLOR_PALETTE[cls_id % len(COLOR_PALETTE)]
+
                 # Draw on annotated image
-                label = f'{self.coco_names.get(cls_id, cls_id)} {conf:.2f}'
+                label = f'{display_name} {conf:.2f}'
                 cv2.rectangle(
                     annotated,
                     (int(x1), int(y1)),
                     (int(x2), int(y2)),
-                    (0, 255, 0),
+                    color,
                     2,
+                )
+                # Background banner for text readability
+                (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                cv2.rectangle(
+                    annotated,
+                    (int(x1), max(0, int(y1) - 20)),
+                    (int(x1) + w + 4, max(20, int(y1))),
+                    color,
+                    -1,
                 )
                 cv2.putText(
                     annotated, label,
-                    (int(x1), int(y1) - 8),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2,
+                    (int(x1) + 2, max(15, int(y1) - 5)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
+                    cv2.LINE_AA,
                 )
 
         # Publish detections
