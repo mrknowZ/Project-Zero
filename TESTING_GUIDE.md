@@ -35,7 +35,7 @@ ros2 launch clearpath_gz simulation.launch.py
 #### Terminal 2 — Unpause Gazebo Simulation Clock
 > **Why?** Nodes using `use_sim_time:=true` require Gazebo's `/clock` topic to advance. Gazebo starts paused by default while loading assets.
 ```bash
-ign service -s /world/warehouse/control --req 'pause: false'
+ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
 ```
 
 #### Terminal 3 — Launch Pre-Configured RViz2 Visualizer (Map + Robot + LiDAR + YOLO + Camera)
@@ -65,7 +65,7 @@ If you want to run and debug each component individually in separate terminals:
 | Terminal | Component | Exact Command |
 |---|---|---|
 | **T1: Gazebo Simulation** | Simulation World & Jackal | `ros2 launch clearpath_gz simulation.launch.py` |
-| **T2: Unpause Clock** | Simulation Physics & Clock | `ign service -s /world/warehouse/control --req 'pause: false'` |
+| **T2: Unpause Clock** | Simulation Physics & Clock | `ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'` |
 | **T3: Sensor Bridge** | 3D PointCloud $\to$ 2D LaserScan | `ros2 launch launch/pointcloud_to_laserscan.launch.py` |
 | **T4: AMCL Localization** | Map Server & AMCL | `ros2 launch clearpath_nav2_demos localization.launch.py use_sim_time:=true setup_path:=$HOME/clearpath/ map:=$(pwd)/maps/warehouse_map.yaml` |
 | **T5: Nav2 Autonomy** | Planners, Controllers, Recoveries | `ros2 launch clearpath_nav2_demos nav2.launch.py use_sim_time:=true setup_path:=$HOME/clearpath/` |
@@ -88,7 +88,7 @@ ros2 run rqt_image_view rqt_image_view /j100_0000/yolo_detector/detections_image
 ros2 launch clearpath_gz simulation.launch.py
 
 # Terminal 2 — Unpause Clock
-ign service -s /world/warehouse/control --req 'pause: false'
+ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
 
 # Terminal 3 — 3D to 2D LiDAR Bridge
 ros2 launch launch/pointcloud_to_laserscan.launch.py

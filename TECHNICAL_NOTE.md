@@ -127,7 +127,7 @@ When running in simulation (`use_sim_time:=true`), ROS 2 nodes synchronize their
 Because Gazebo launches paused by default (allowing robot meshes and ROS controllers to finish loading into memory), **the simulation clock must be explicitly unpaused**:
 
 ```bash
-ign service -s /world/warehouse/control --req 'pause: false'
+ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
 ```
 
 ---
@@ -141,7 +141,7 @@ ign service -s /world/warehouse/control --req 'pause: false'
 ros2 launch clearpath_gz simulation.launch.py
 
 # Terminal 2: Unpause Gazebo Clock
-ign service -s /world/warehouse/control --req 'pause: false'
+ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
 
 # Terminal 3: Launch Pre-Configured RViz2 (Navigation + Camera + YOLO)
 ros2 run rviz2 rviz2 \
@@ -163,7 +163,7 @@ ros2 launch jackal_mission mission.launch.py \
 ros2 launch clearpath_gz simulation.launch.py
 
 # 2. Clock Unpause
-ign service -s /world/warehouse/control --req 'pause: false'
+ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
 
 # 3. 3D-to-2D LiDAR Bridge
 ros2 launch launch/pointcloud_to_laserscan.launch.py

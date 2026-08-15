@@ -81,7 +81,7 @@ source install/setup.bash
 ros2 launch clearpath_gz simulation.launch.py
 
 # Terminal 2: Unpause Gazebo Clock (mandatory for use_sim_time)
-ign service -s /world/warehouse/control --req 'pause: false'
+ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --reptype ignition.msgs.Boolean --timeout 3000 --req 'pause: false'
 
 # Terminal 3: Pre-configured RViz2 (Nav2 + Camera + YOLO Detections)
 ros2 run rviz2 rviz2 \
