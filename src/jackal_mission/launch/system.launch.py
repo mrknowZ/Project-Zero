@@ -248,7 +248,18 @@ def generate_launch_description():
         ],
     )
 
-    # ---------------- 8. Mission Orchestrator Node ----------------
+    # ---------------- 8. Auto Initial Pose Publisher (AMCL Trigger) ----------------
+    auto_init_pose_action = TimerAction(
+        period=12.0,
+        actions=[
+            ExecuteProcess(
+                cmd=['python3', '/home/holetown/ali/Project-Zero/scripts/auto_initial_pose.py'],
+                output='screen',
+            )
+        ],
+    )
+
+    # ---------------- 9. Mission Orchestrator Node ----------------
     mission_node = TimerAction(
         period=18.0,
         actions=[
@@ -286,5 +297,6 @@ def generate_launch_description():
         vision_launch,
         rviz_group,
         camera_view_action,
+        auto_init_pose_action,
         mission_node,
     ])
