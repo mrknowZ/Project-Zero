@@ -97,6 +97,7 @@ def launch_setup(context, *args, **kwargs):
         source_file=file_parameters,
         param_rewrites={
             'scan_topic': eval_scan_topic,
+            'use_sim_time': use_sim_time,
         },
         convert_types=True
     )
@@ -106,6 +107,8 @@ def launch_setup(context, *args, **kwargs):
 
     localization = GroupAction([
         PushRosNamespace(namespace),
+        SetRemap('/tf', '/' + namespace + '/tf'),
+        SetRemap('/tf_static', '/' + namespace + '/tf_static'),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(launch_localization),

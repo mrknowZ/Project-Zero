@@ -108,6 +108,9 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([pkg_clearpath_gz, 'launch', 'simulation.launch.py'])
         ),
+        launch_arguments={
+            'rviz': 'false',
+        }.items(),
         condition=IfCondition(LaunchConfiguration('sim')),
     )
 
@@ -160,31 +163,41 @@ def generate_launch_description():
     )
 
     # ---------------- 3. Localization (AMCL + Map Server) ----------------
-    localization_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution([pkg_clearpath_nav2_demos, 'launch', 'localization.launch.py'])
-        ),
-        launch_arguments={
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'setup_path': LaunchConfiguration('setup_path'),
-            'map': LaunchConfiguration('map'),
-        }.items(),
+    localization_launch = TimerAction(
+        period=6.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([pkg_clearpath_nav2_demos, 'launch', 'localization.launch.py'])
+                ),
+                launch_arguments={
+                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                    'setup_path': LaunchConfiguration('setup_path'),
+                    'map': LaunchConfiguration('map'),
+                }.items(),
+            )
+        ],
     )
 
     # ---------------- 4. Nav2 (Planners, Controllers, BT) ----------------
-    nav2_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution([pkg_clearpath_nav2_demos, 'launch', 'nav2.launch.py'])
-        ),
-        launch_arguments={
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'setup_path': LaunchConfiguration('setup_path'),
-        }.items(),
+    nav2_launch = TimerAction(
+        period=7.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([pkg_clearpath_nav2_demos, 'launch', 'nav2.launch.py'])
+                ),
+                launch_arguments={
+                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                    'setup_path': LaunchConfiguration('setup_path'),
+                }.items(),
+            )
+        ],
     )
 
     # ---------------- 5. YOLOv8 Vision Pipeline ----------------
     vision_launch = TimerAction(
-        period=6.0,
+        period=8.0,
         actions=[
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -200,7 +213,7 @@ def generate_launch_description():
 
     # ---------------- 6. RViz2 Visualizer ----------------
     rviz_group = TimerAction(
-        period=7.0,
+        period=9.0,
         actions=[
             GroupAction([
                 PushRosNamespace(LaunchConfiguration('namespace')),
@@ -223,7 +236,7 @@ def generate_launch_description():
 
     # ---------------- 7. Camera View Window (rqt_image_view) ----------------
     camera_view_action = TimerAction(
-        period=8.0,
+        period=10.0,
         actions=[
             Node(
                 package='rqt_image_view',
@@ -237,7 +250,7 @@ def generate_launch_description():
 
     # ---------------- 8. Mission Orchestrator Node ----------------
     mission_node = TimerAction(
-        period=15.0,
+        period=18.0,
         actions=[
             Node(
                 package='jackal_mission',
