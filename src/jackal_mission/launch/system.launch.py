@@ -67,6 +67,12 @@ def generate_launch_description():
         description='Launch dedicated rqt_image_view window for real-time YOLO camera detections',
     )
 
+    waypoints_arg = DeclareLaunchArgument(
+        'waypoints',
+        default_value='',
+        description='Path to custom waypoints YAML file (e.g. for real robot tests)',
+    )
+
     mission_arg = DeclareLaunchArgument(
         'mission',
         default_value='true',
@@ -241,6 +247,7 @@ def generate_launch_description():
                 parameters=[
                     os.path.join(pkg_jackal_mission, 'config', 'mission_params.yaml'),
                     {'use_sim_time': LaunchConfiguration('use_sim_time')},
+                    {'waypoints_file': LaunchConfiguration('waypoints')},
                 ],
                 output='screen',
                 condition=IfCondition(LaunchConfiguration('mission')),
@@ -252,6 +259,7 @@ def generate_launch_description():
         sim_arg,
         rviz_arg,
         camera_view_arg,
+        waypoints_arg,
         mission_arg,
         namespace_arg,
         use_sim_time_arg,
