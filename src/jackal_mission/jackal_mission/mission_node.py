@@ -119,11 +119,7 @@ class MissionNode(Node):
         import math
         pose = PoseStamped()
         pose.header.frame_id = 'map'
-        if self.use_sim_time:
-            pose.header.stamp.sec = 0
-            pose.header.stamp.nanosec = 0
-        else:
-            pose.header.stamp = self.get_clock().now().to_msg()
+        pose.header.stamp = self.get_clock().now().to_msg()
         pose.pose.position.x = float(x)
         pose.pose.position.y = float(y)
         pose.pose.position.z = 0.0
