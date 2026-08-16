@@ -147,7 +147,7 @@ class MissionNode(Node):
 
         # Wait for Nav2 to activate
         self.get_logger().info('Waiting for Nav2 to become active…')
-        navigator.waitUntilNav2Active(localizer='amcl')
+        navigator.waitUntilNav2Active(localizer='')
         self.get_logger().info('Nav2 is active — starting mission.')
 
         for i, wp in enumerate(self.waypoints):
