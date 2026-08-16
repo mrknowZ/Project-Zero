@@ -19,6 +19,20 @@ source install/setup.bash
 
 ---
 
+## 0.1 Clean Reset & Process Management (Reproducibility)
+
+> **Important for Reproducibility**: Before starting a new test run or if a previous simulation was interrupted, always reset lingering background processes and ROS 2 daemons to ensure a 100% clean test environment:
+
+```bash
+# Run the all-in-one cleanup script:
+./scripts/clean_all.sh
+
+# Or run the direct one-liner:
+ps -ef | grep -E "ros|gz|ign|nav2|planner|controller|amcl|mission|yolo|rviz|rqt|slam" | grep -v grep | awk '{print $2}' | xargs kill -9 2>/dev/null || true; ros2 daemon stop; sleep 1; ros2 daemon start
+```
+
+---
+
 ## 1. Top-Level Launch (ONE COMMAND — Complete System)
 
 Run the entire autonomy and vision pipeline with a single command:

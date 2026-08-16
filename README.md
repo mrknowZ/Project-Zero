@@ -108,6 +108,7 @@ If you want to run or test components individually in separate terminals:
 | **8. YOLOv8 Vision Pipeline** | `ros2 launch jackal_vision vision.launch.py use_sim_time:=true` |
 | **9. Autonomous Mission Node** | `ros2 run jackal_mission mission_node --ros-args -r __ns:=/j100_0000 -p use_sim_time:=true` |
 | **10. Manual Keyboard Teleop** | `ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/j100_0000/cmd_vel` |
+| **11. Clean All Background Processes** | `./scripts/clean_all.sh` |
 
 > For complete testing workflows, QoS settings, and evidence verification, see [TESTING_GUIDE.md](TESTING_GUIDE.md).
 
