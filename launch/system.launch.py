@@ -56,15 +56,9 @@ def generate_launch_description():
     )
 
     rviz_arg = DeclareLaunchArgument(
-        'rviz',
+        'use_rviz',
         default_value='true',
         description='Launch RViz2 visualizer',
-    )
-
-    camera_view_arg = DeclareLaunchArgument(
-        'camera_view',
-        default_value='true',
-        description='Launch dedicated rqt_image_view window for real-time YOLO camera detections',
     )
 
     waypoints_arg = DeclareLaunchArgument(
@@ -212,43 +206,25 @@ def generate_launch_description():
     )
 
     # ---------------- 6. RViz2 Visualizer ----------------
-    rviz_group = TimerAction(
-        period=9.0,
-        actions=[
-            GroupAction([
-                PushRosNamespace(LaunchConfiguration('namespace')),
-                Node(
-                    package='rviz2',
-                    executable='rviz2',
-                    name='rviz2',
-                    arguments=['-d', default_rviz_config],
-                    parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
-                    remappings=[
-                        ('/tf', 'tf'),
-                        ('/tf_static', 'tf_static'),
-                    ],
-                    output='screen',
-                    condition=IfCondition(LaunchConfiguration('rviz')),
-                )
-            ])
-        ]
-    )
-
-    # ---------------- 7. Camera View Window (rqt_image_view) ----------------
-    camera_view_action = TimerAction(
-        period=10.0,
-        actions=[
-            Node(
-                package='rqt_image_view',
-                executable='rqt_image_view',
-                name='yolo_camera_viewer',
-                arguments=['/j100_0000/yolo_detector/detections_image'],
-                condition=IfCondition(LaunchConfiguration('camera_view')),
-            )
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', default_rviz_config],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
+        remappings=[
+            ('/tf', ['/', LaunchConfiguration('namespace'), '/tf']),
+            ('/tf_static', ['/', LaunchConfiguration('namespace'), '/tf_static']),
+            ('/robot_description', ['/', LaunchConfiguration('namespace'), '/robot_description']),
+            ('map', ['/', LaunchConfiguration('namespace'), '/map']),
+            ('initialpose', ['/', LaunchConfiguration('namespace'), '/initialpose']),
+            ('goal_pose', ['/', LaunchConfiguration('namespace'), '/goal_pose']),
         ],
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('use_rviz')),
     )
 
-    # ---------------- 8. Auto Initial Pose Publisher (AMCL Trigger) ----------------
+    # ---------------- 7. Auto Initial Pose Publisher (AMCL Trigger) ----------------
     auto_init_pose_action = TimerAction(
         period=12.0,
         actions=[
@@ -259,7 +235,7 @@ def generate_launch_description():
         ],
     )
 
-    # ---------------- 9. Mission Orchestrator Node ----------------
+    # ---------------- 8. Mission Orchestrator Node ----------------
     mission_node = TimerAction(
         period=18.0,
         actions=[
@@ -282,7 +258,6 @@ def generate_launch_description():
     return LaunchDescription([
         sim_arg,
         rviz_arg,
-        camera_view_arg,
         waypoints_arg,
         mission_arg,
         namespace_arg,
@@ -295,8 +270,7 @@ def generate_launch_description():
         localization_launch,
         nav2_launch,
         vision_launch,
-        rviz_group,
-        camera_view_action,
+        rviz_node,
         auto_init_pose_action,
         mission_node,
     ])

@@ -9,9 +9,10 @@ RViz2 visualisation with color-coded bounding boxes.
 Supports common objects: person, bicycle, tree / plant, car, chair, bottle, etc.
 """
 
+import time
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, qos_profile_sensor_data
 
 from sensor_msgs.msg import Image
 from vision_msgs.msg import (
@@ -167,16 +168,6 @@ class YoloDetectorNode(Node):
             )
 
         # --------------- ROS I/O ---------------
-        qos = QoSProfile(
-            reliability=ReliabilityPolicy.BEST_EFFORT,
-            history=HistoryPolicy.KEEP_LAST,
-            depth=1,
-        )
-
-        self.image_sub = self.create_subscription(
-            Image, image_topic, self._image_callback, qos
-        )
-
         self.det_pub = self.create_publisher(
             Detection2DArray, '~/detections', 10
         )
@@ -184,11 +175,13 @@ class YoloDetectorNode(Node):
             Image, '~/detections_image', 10
         )
 
-        # Rate-limit inference
-        self._period = 1.0 / rate_hz
-        self._latest_image_msg = None
+        self.image_sub = self.create_subscription(
+            Image, image_topic, self._image_callback, qos_profile_sensor_data
+        )
 
-        self.timer = self.create_timer(self._period, self._timer_callback)
+        # Rate-limit inference (wall-clock throttling)
+        self._period = 1.0 / max(rate_hz, 0.1)
+        self._last_infer_time = 0.0
 
         self.get_logger().info(
             f'YoloDetectorNode ready — subscribing to {image_topic} '
@@ -197,15 +190,11 @@ class YoloDetectorNode(Node):
 
     # ------------------------------------------------------------------
     def _image_callback(self, msg: Image):
-        """Buffer the latest image; inference runs on the timer."""
-        self._latest_image_msg = msg
-
-    # ------------------------------------------------------------------
-    def _timer_callback(self):
-        """Run inference on the latest buffered image."""
-        msg = self._latest_image_msg
-        if msg is None:
+        """Process image with YOLOv8 and publish detections and annotated image."""
+        now = time.monotonic()
+        if (now - self._last_infer_time) < self._period:
             return
+        self._last_infer_time = now
 
         # Convert ROS Image → OpenCV BGR
         try:
@@ -304,9 +293,6 @@ class YoloDetectorNode(Node):
             self.get_logger().info(
                 f'Detected {len(det_array.detections)} objects: {classes_found}'
             )
-
-        # Clear buffered image so we don't re-process it
-        self._latest_image_msg = None
 
 
 def main(args=None):

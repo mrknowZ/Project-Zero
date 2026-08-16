@@ -119,7 +119,11 @@ class MissionNode(Node):
         import math
         pose = PoseStamped()
         pose.header.frame_id = 'map'
-        pose.header.stamp = self.get_clock().now().to_msg()
+        if self.use_sim_time:
+            pose.header.stamp.sec = 0
+            pose.header.stamp.nanosec = 0
+        else:
+            pose.header.stamp = self.get_clock().now().to_msg()
         pose.pose.position.x = float(x)
         pose.pose.position.y = float(y)
         pose.pose.position.z = 0.0
@@ -131,16 +135,19 @@ class MissionNode(Node):
     # ------------------------------------------------------------------
     def run_mission(self):
         """Execute the full waypoint-following + detection mission."""
-        navigator = BasicNavigator(namespace=self.namespace)
+        navigator = BasicNavigator(namespace=f'/{self.namespace}')
         if self.use_sim_time:
             navigator.set_parameters([
                 rclpy.parameter.Parameter('use_sim_time', rclpy.Parameter.Type.BOOL, True)
             ])
 
+        # Initialize AMCL pose
+        init_pose = self._make_pose(0.0, 0.0, 0.0)
+        navigator.setInitialPose(init_pose)
+
         # Wait for Nav2 to activate
         self.get_logger().info('Waiting for Nav2 to become active…')
-        while not navigator.nav_to_pose_client.wait_for_server(timeout_sec=2.0):
-            self.get_logger().info('Waiting for navigate_to_pose action server...')
+        navigator.waitUntilNav2Active(localizer='amcl')
         self.get_logger().info('Nav2 is active — starting mission.')
 
         for i, wp in enumerate(self.waypoints):
