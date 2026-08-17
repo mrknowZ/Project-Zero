@@ -1,0 +1,62 @@
+# RTAB-Map 3D Multi-Modal SLAM Configuration for Clearpath Jackal J100
+# Generalized for Indoor Warehouses, Outdoor Rough Terrain, Slopes, and Multi-Modal Environments
+
+rtabmap:
+  ros__parameters:
+    use_sim_time: true
+    frame_id: "base_link"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    subscribe_depth: false
+    subscribe_rgb: true
+    subscribe_scan: false
+    subscribe_scan_cloud: true
+    subscribe_odom_info: false
+    approx_sync: true
+    sync_queue_size: 20
+    topic_queue_size: 20
+
+    # RTAB-Map Core Parameters
+    Rtabmap/DetectionRate: "2.0"
+    Rtabmap/MemoryThr: "0"
+    Rtabmap/TimeThr: "0"
+    Rtabmap/PublishRAMUsage: "true"
+
+    # Registration Strategy: 1=ICP (LiDAR-based), 2=Visual+ICP
+    Reg/Strategy: "1"
+    Reg/Force3DoF: "false"          # Full 6-DoF 3D pitch/roll for uneven outdoor terrain
+
+    # 3D Grid & Terrain Elevation / Slope Parameters (Generalized for Indoor & Outdoor)
+    Grid/3D: "true"
+    Grid/FromDepth: "false"
+    Grid/CellSize: "0.05"
+    Grid/RangeMax: "35.0"           # Long range for wide open outdoor spaces
+    Grid/RangeMin: "0.4"
+    Grid/RayTracing: "true"
+    Grid/NormalsSegmentation: "true"
+    Grid/MaxGroundAngle: "32.0"     # Ground slope threshold (degrees) for ramps & outdoor hills
+    Grid/MaxGroundHeight: "0.20"    # Max height above ground for traversable terrain (handles rocks/grass)
+    Grid/MinGroundHeight: "-0.20"   # Min height below ground (handles small ruts/depressions)
+    Grid/MaxObstacleHeight: "3.5"   # Max obstacle height (buildings, trees, racks)
+    Grid/ClusterRadius: "0.1"
+    Grid/MinClusterSize: "10"
+    Grid/FlatObstacleDetected: "true"
+
+    # ICP (LiDAR Odometry & Loop Closure) Parameters
+    Icp/VoxelSize: "0.05"
+    Icp/PointToPlane: "true"
+    Icp/PointToPlaneNormalNeighbors: "10"
+    Icp/MaxCorrespondenceDistance: "0.4"
+    Icp/Strategy: "1"
+    Icp/CorrespondenceRatio: "0.2"
+    Icp/Iterations: "30"
+
+    # Memory & Loop Closure Management
+    Mem/IncrementalMemory: "true"
+    Mem/InitWMWithAllNodes: "false"
+    Mem/RehearsalSimilarity: "0.6"
+    Mem/BadSignaturesIgnored: "true"
+    RGBD/ProximityBySpace: "true"
+    RGBD/AngularUpdate: "0.1"
+    RGBD/LinearUpdate: "0.1"
+    RGBD/OptimizeFromGraphEnd: "false"
