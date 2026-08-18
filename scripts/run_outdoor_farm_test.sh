@@ -22,4 +22,4 @@ source /home/holetown/ali/Project-Zero/install/setup.bash
 ros2 launch /home/holetown/ali/Project-Zero/launch/advanced_system.launch.py \
     world:=${WORLD} \
     use_sim_time:=true \
-    auto_start_exploration:=true
+    auto_start_exploration:=false

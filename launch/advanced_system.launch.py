@@ -49,8 +49,8 @@ def generate_launch_description():
 
     auto_start_arg = DeclareLaunchArgument(
         'auto_start_exploration',
-        default_value='true',
-        description='Automatically dispatch frontier exploration goals',
+        default_value='false',
+        description='Automatically dispatch frontier exploration goals (default: false for manual start)',
     )
 
     # 1. Gazebo Simulation

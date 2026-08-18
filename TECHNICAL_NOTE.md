@@ -123,6 +123,19 @@ Nav2 coordinates path planning and motion control using the MPPI controller. Rec
 ### 3.6 Mission Orchestrator & Reporting
 `mission_node` utilizes the `BasicNavigator` API to sequence navigation through waypoints (`shelf_a`, `shelf_b`, `loading_dock`), dwell for object detection, and generate machine-readable JSON and human-readable text reports in `/tmp/jackal_mission_reports/`.
 
+### 3.7 Manual Autonomy Override & Twist Multiplexer Priority Hierarchy
+To prevent race conditions between autonomous path execution and human teleoperation:
+- **Priority Multiplexing (`twist_mux`)**:
+  - `platform/emergency_stop` (Lock, Priority 255): Software and hardware emergency brake.
+  - `rc_teleop/cmd_vel` (Topic, Priority 12): Web Mission Control and remote teleoperation input.
+  - `joy_teleop/cmd_vel` (Topic, Priority 10): Physical gamepad / joystick.
+  - `twist_marker_server/cmd_vel` (Topic, Priority 8): Interactive marker teleoperation.
+  - `cmd_vel` / `cmd_vel_nav` (Topic, Priority 1): Nav2 planner & frontier exploration.
+- **Auto-Pause & Goal Preemption**:
+  - When manual velocity is received on the teleop bridge, an asynchronous `PAUSE` signal is broadcast on `/j100_0000/exploration/command`.
+  - The `frontier_explorer_node` immediately cancels all active Nav2 action goals (`cancel_goal_async()`), yields velocity ownership to the human operator, and enters the idle standby state.
+  - Default initialization flag `auto_start_exploration` is set to `false` to ensure the robot never moves upon boot until explicitly commanded.
+
 ---
 
 ## 4. Simulation Clock Synchronization Requirement
@@ -139,7 +152,23 @@ ign service -s /world/warehouse/control --reqtype ignition.msgs.WorldControl --r
 
 ## 5. Deployment Instructions
 
-### Mode 1: ONE-COMMAND Top-Level Bringup (Recommended)
+### Mode 1: Outdoor Farm Autonomy Stack (Advanced Phase)
+
+```bash
+cd ~/ali/Project-Zero
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+
+# Launch full outdoor stack in orchard (or solar_farm)
+./scripts/run_outdoor_farm_test.sh orchard
+
+# Access the Industrial Web Dashboard
+# Open http://localhost:8080 in any web browser
+```
+
+---
+
+### Mode 2: ONE-COMMAND Baseline Bringup (Warehouse)
 
 ```bash
 cd ~/ali/Project-Zero
@@ -158,7 +187,7 @@ ros2 launch jackal_mission system.launch.py
 
 ---
 
-### Mode 2: Individual / Step-by-Step Component Execution
+### Mode 3: Individual / Step-by-Step Component Execution
 
 ```bash
 # 1. Simulation
@@ -197,6 +226,7 @@ ros2 run jackal_mission mission_node --ros-args -r __ns:=/j100_0000 -p use_sim_t
 
 ### Visualization Utilities
 
+* **Web Dashboard**: `http://localhost:8080`
 * **Standalone Camera & YOLO GUI**:
   ```bash
   ros2 run rqt_image_view rqt_image_view /j100_0000/yolo_detector/detections_image

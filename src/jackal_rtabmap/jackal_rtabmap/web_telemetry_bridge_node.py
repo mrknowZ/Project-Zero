@@ -29,7 +29,7 @@ import tornado.ioloop
 from geometry_msgs.msg import Twist, Vector3Stamped, PoseStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
 
 def imgmsg_to_cv2(img_msg: Image) -> np.ndarray:
@@ -125,8 +125,7 @@ class TelemetryWebSocket(tornado.websocket.WebSocketHandler):
                 ros_node.send_exploration_command(cmd_str)
 
             elif msg_type == 'estop' and ros_node is not None:
-                ros_node.send_exploration_command('ESTOP')
-                ros_node.publish_cmd_vel(0.0, 0.0)
+                ros_node.engage_estop()
 
             elif msg_type == 'save_map':
                 threading.Thread(target=save_map_task, daemon=True).start()
@@ -173,8 +172,11 @@ class WebTelemetryBridgeNode(Node):
         global ros_node
         ros_node = self
 
-        # Teleop & Navigation & Exploration publishers
+        # Teleop & Navigation & Exploration publishers (High-Priority Mux Routing)
         self.cmd_vel_pub = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.joy_teleop_pub = self.create_publisher(Twist, 'joy_teleop/cmd_vel', 10)
+        self.rc_teleop_pub = self.create_publisher(Twist, 'rc_teleop/cmd_vel', 10)
+        self.estop_pub = self.create_publisher(Bool, 'platform/emergency_stop', 10)
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
         self.exploration_cmd_pub = self.create_publisher(String, 'exploration/command', 10)
 
@@ -218,14 +220,40 @@ class WebTelemetryBridgeNode(Node):
         self.exploration_cmd_pub.publish(msg)
         self.get_logger().info(f'Published Exploration Command: {cmd_str}')
 
+    def engage_estop(self):
+        # 1. Lock twist_mux via emergency_stop topic (Priority 255)
+        estop_msg = Bool()
+        estop_msg.data = True
+        self.estop_pub.publish(estop_msg)
+
+        # 2. Cancel and pause all autonomous exploration and Nav2
+        self.send_exploration_command('STOP')
+
+        # 3. Publish zero velocity on all mux channels
+        twist = Twist()
+        self.cmd_vel_pub.publish(twist)
+        self.joy_teleop_pub.publish(twist)
+        self.rc_teleop_pub.publish(twist)
+        self.get_logger().warn('>>> EMERGENCY STOP ENGAGED: twist_mux locked & velocity zeroed.')
+
+    def release_estop(self):
+        estop_msg = Bool()
+        estop_msg.data = False
+        self.estop_pub.publish(estop_msg)
+
     def publish_cmd_vel(self, linear, angular):
         # Auto-pause autonomous exploration if user takes manual control
         if linear != 0.0 or angular != 0.0:
+            self.release_estop()
             self.send_exploration_command('PAUSE')
 
         twist = Twist()
         twist.linear.x = max(-0.8, min(0.8, linear))
         twist.angular.z = max(-1.2, min(1.2, angular))
+
+        # Publish to high-priority mux channels (RC=12, Joy=10, Base=1)
+        self.rc_teleop_pub.publish(twist)
+        self.joy_teleop_pub.publish(twist)
         self.cmd_vel_pub.publish(twist)
 
     def send_navigation_goal(self, gx, gy):

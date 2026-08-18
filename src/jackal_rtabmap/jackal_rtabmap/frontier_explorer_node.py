@@ -29,7 +29,7 @@ class FrontierExplorerNode(Node):
         # Parameters
         self.declare_parameter('min_frontier_size', 5)
         self.declare_parameter('gain_weight', 1.5)
-        self.declare_parameter('auto_start', True)
+        self.declare_parameter('auto_start', False)
         self.declare_parameter('robot_frame', 'base_link')
         self.declare_parameter('map_frame', 'map')
 
@@ -37,7 +37,11 @@ class FrontierExplorerNode(Node):
         self.gain_weight = self.get_parameter('gain_weight').value
         self.robot_frame = self.get_parameter('robot_frame').value
         self.map_frame = self.get_parameter('map_frame').value
-        self.is_exploring = self.get_parameter('auto_start').value
+        raw_auto_start = self.get_parameter('auto_start').value
+        if isinstance(raw_auto_start, str):
+            self.is_exploring = raw_auto_start.strip().lower() in ('true', '1', 'yes')
+        else:
+            self.is_exploring = bool(raw_auto_start)
 
         # State
         self.current_map = None
