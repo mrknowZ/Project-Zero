@@ -143,6 +143,29 @@ def generate_launch_description():
         output='screen',
     )
 
+    # 7b. Slope & Terrain Traversability Costmap Node
+    slope_traversability_node = Node(
+        package='jackal_rtabmap',
+        executable='slope_traversability_costmap_node',
+        name='slope_traversability_costmap_node',
+        namespace=LaunchConfiguration('namespace'),
+        parameters=[
+            {
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+                'grid_size_m': 8.0,
+                'grid_resolution_m': 0.10,
+                'caution_slope_deg': 15.0,
+                'lethal_slope_deg': 25.0,
+                'max_step_height_m': 0.14,
+            }
+        ],
+        remappings=[
+            ('sensors/lidar3d_0/points', ['/', LaunchConfiguration('namespace'), '/sensors/lidar3d_0/points']),
+            ('platform/odom', ['/', LaunchConfiguration('namespace'), '/platform/odom']),
+        ],
+        output='screen',
+    )
+
     # 8. Autonomous Frontier Exploration Node
     explorer_node = Node(
         package='jackal_rtabmap',
@@ -226,6 +249,7 @@ def generate_launch_description():
         nav2_launch,
         yolo_launch,
         slope_node,
+        slope_traversability_node,
         delayed_explorer,
         semantic_mapper_node,
         web_bridge_node,

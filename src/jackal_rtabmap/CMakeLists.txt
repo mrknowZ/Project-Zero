@@ -45,6 +45,12 @@ install(PROGRAMS
   RENAME web_telemetry_bridge_node
 )
 
+install(PROGRAMS
+  jackal_rtabmap/slope_traversability_costmap_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME slope_traversability_costmap_node
+)
+
 install(DIRECTORY launch config www
   DESTINATION share/${PROJECT_NAME}
 )
