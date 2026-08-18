@@ -68,7 +68,7 @@ def generate_launch_description():
     unpause_cmd = ExecuteProcess(
         cmd=[
             'ign', 'service',
-            '-s', '/world/warehouse/control',
+            '-s', ['/world/', LaunchConfiguration('world'), '/control'],
             '--reqtype', 'ignition.msgs.WorldControl',
             '--reptype', 'ignition.msgs.Boolean',
             '--timeout', '3000',
