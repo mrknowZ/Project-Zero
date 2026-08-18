@@ -60,16 +60,16 @@ function drawHorizon(pitchDeg, rollDeg) {
   const pitchPx = Math.max(-r, Math.min(r, pitchDeg * 1.5));
   horizonCtx.translate(0, pitchPx);
 
-  // Draw Sky (Solid Navy Blue #0369a1)
-  horizonCtx.fillStyle = '#0369a1';
+  // Draw Sky (Soft Sky Blue #BAE6FD)
+  horizonCtx.fillStyle = '#BAE6FD';
   horizonCtx.fillRect(-w, -h * 2, w * 2, h * 2);
 
-  // Draw Ground (Solid Earth Brown #78350f)
-  horizonCtx.fillStyle = '#78350f';
+  // Draw Ground (Soft Warm Sand #DDD4C4)
+  horizonCtx.fillStyle = '#DDD4C4';
   horizonCtx.fillRect(-w, 0, w * 2, h * 2);
 
-  // Draw Horizon White Line
-  horizonCtx.strokeStyle = '#ffffff';
+  // Draw Horizon Charcoal Line
+  horizonCtx.strokeStyle = '#292524';
   horizonCtx.lineWidth = 2;
   horizonCtx.beginPath();
   horizonCtx.moveTo(-w, 0);
@@ -77,7 +77,7 @@ function drawHorizon(pitchDeg, rollDeg) {
   horizonCtx.stroke();
 
   // Pitch ladder marks
-  horizonCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  horizonCtx.strokeStyle = 'rgba(41, 37, 36, 0.4)';
   horizonCtx.lineWidth = 1;
   for (let deg = -30; deg <= 30; deg += 10) {
     if (deg === 0) continue;
@@ -91,9 +91,9 @@ function drawHorizon(pitchDeg, rollDeg) {
 
   horizonCtx.restore();
 
-  // Fixed Yellow Reticle in center
+  // Fixed Vibrant Terracotta Reticle in center
   horizonCtx.save();
-  horizonCtx.strokeStyle = '#f59e0b';
+  horizonCtx.strokeStyle = '#EA580C';
   horizonCtx.lineWidth = 3;
   // Left wing
   horizonCtx.beginPath();
@@ -106,13 +106,13 @@ function drawHorizon(pitchDeg, rollDeg) {
   horizonCtx.lineTo(cx + 24, cy);
   horizonCtx.stroke();
   // Center dot
-  horizonCtx.fillStyle = '#f59e0b';
+  horizonCtx.fillStyle = '#EA580C';
   horizonCtx.beginPath();
   horizonCtx.arc(cx, cy, 2.5, 0, Math.PI * 2);
   horizonCtx.fill();
 
   // Outer border ring
-  horizonCtx.strokeStyle = '#334155';
+  horizonCtx.strokeStyle = '#E8E1D5';
   horizonCtx.lineWidth = 2;
   horizonCtx.beginPath();
   horizonCtx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -217,10 +217,10 @@ function updateTelemetry(data) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td><strong>#${lm.id}</strong></td>
-          <td><strong style="color: #60a5fa;">${lm.label.toUpperCase()}</strong></td>
-          <td><span style="color: #34d399; font-weight:600;">${Math.round(lm.score * 100)}%</span></td>
-          <td>(${lm.x.toFixed(2)}, ${lm.y.toFixed(2)}, ${lm.z.toFixed(2)})</td>
-          <td>${lm.count} hits</td>
+          <td><strong style="color: #1D4ED8;">${lm.label.toUpperCase()}</strong></td>
+          <td><span style="color: #15803D; font-weight:600;">${Math.round(lm.score * 100)}%</span></td>
+          <td><span style="font-family: var(--font-mono); color: #292524;">(${lm.x.toFixed(2)}, ${lm.y.toFixed(2)}, ${lm.z.toFixed(2)})</span></td>
+          <td><span style="color: #78716C; font-weight:600;">${lm.count} hits</span></td>
         `;
         landmarksTbody.appendChild(tr);
       });
