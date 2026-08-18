@@ -213,9 +213,6 @@ Visualization Manager:
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: Slope Inclinometer & Safety HUD
-      Namespaces:
-        slope_hud: true
-        slope_ring: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -223,6 +220,17 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /j100_0000/slope_safety/markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Autonomous Exploration Frontiers
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /j100_0000/exploration/frontiers
       Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
