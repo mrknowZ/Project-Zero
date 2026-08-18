@@ -120,6 +120,14 @@ class TelemetryWebSocket(tornado.websocket.WebSocketHandler):
                 gy = float(data.get('y', 0.0))
                 ros_node.send_navigation_goal(gx, gy)
 
+            elif msg_type == 'exploration_cmd' and ros_node is not None:
+                cmd_str = data.get('command', 'PAUSE')
+                ros_node.send_exploration_command(cmd_str)
+
+            elif msg_type == 'estop' and ros_node is not None:
+                ros_node.send_exploration_command('ESTOP')
+                ros_node.publish_cmd_vel(0.0, 0.0)
+
             elif msg_type == 'save_map':
                 threading.Thread(target=save_map_task, daemon=True).start()
 
@@ -165,9 +173,10 @@ class WebTelemetryBridgeNode(Node):
         global ros_node
         ros_node = self
 
-        # Teleop & Navigation publishers
+        # Teleop & Navigation & Exploration publishers
         self.cmd_vel_pub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
+        self.exploration_cmd_pub = self.create_publisher(String, 'exploration/command', 10)
 
         # QoS
         sensor_qos = QoSProfile(
@@ -203,13 +212,26 @@ class WebTelemetryBridgeNode(Node):
 
         self.get_logger().info('Web Industrial Telemetry Bridge Node initialized.')
 
+    def send_exploration_command(self, cmd_str: str):
+        msg = String()
+        msg.data = cmd_str
+        self.exploration_cmd_pub.publish(msg)
+        self.get_logger().info(f'Published Exploration Command: {cmd_str}')
+
     def publish_cmd_vel(self, linear, angular):
+        # Auto-pause autonomous exploration if user takes manual control
+        if linear != 0.0 or angular != 0.0:
+            self.send_exploration_command('PAUSE')
+
         twist = Twist()
         twist.linear.x = max(-0.8, min(0.8, linear))
         twist.angular.z = max(-1.2, min(1.2, angular))
         self.cmd_vel_pub.publish(twist)
 
     def send_navigation_goal(self, gx, gy):
+        # Pause exploration when explicit waypoint goal is dispatched
+        self.send_exploration_command('PAUSE')
+
         goal = PoseStamped()
         goal.header.stamp = self.get_clock().now().to_msg()
         goal.header.frame_id = 'map'

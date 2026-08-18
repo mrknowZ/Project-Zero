@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 Autonomous Frontier Exploration Node for Clearpath Jackal J100
-Detects map boundaries (frontiers between known and unknown cells),
-clusters them, selects the optimal frontier, and dispatches Nav2 goals
-until 100% environment exploration is achieved.
+Features:
+  - Dynamic Frontier Detection & Scoring
+  - Real-Time Manual Override & Pause/Resume Command Listening
+  - Active Nav2 Goal Cancellation on Manual Teleoperation / E-STOP
 """
 
 import math
@@ -13,7 +14,7 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 
-from geometry_msgs.msg import PoseStamped, Point
+from geometry_msgs.msg import PoseStamped, Point, Twist
 from nav_msgs.msg import OccupancyGrid
 from std_msgs.msg import String, ColorRGBA
 from visualization_msgs.msg import Marker, MarkerArray
@@ -27,7 +28,6 @@ class FrontierExplorerNode(Node):
 
         # Parameters
         self.declare_parameter('min_frontier_size', 5)
-        self.declare_parameter('exploration_rate_hz', 0.5)
         self.declare_parameter('gain_weight', 1.5)
         self.declare_parameter('auto_start', True)
         self.declare_parameter('robot_frame', 'base_link')
@@ -67,6 +67,9 @@ class FrontierExplorerNode(Node):
         self.map_sub = self.create_subscription(
             OccupancyGrid, 'map', self.map_callback, map_qos
         )
+        self.cmd_sub = self.create_subscription(
+            String, 'exploration/command', self.command_callback, 10
+        )
 
         # Nav2 Action Client
         self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
@@ -74,7 +77,35 @@ class FrontierExplorerNode(Node):
         # Main Exploration Loop Timer
         self.loop_timer = self.create_timer(2.0, self.exploration_cycle)
 
-        self.get_logger().info('Autonomous Frontier Exploration Node initialized.')
+        init_status = 'EXPLORATION ACTIVE' if self.is_exploring else 'MANUAL CONTROL (IDLE)'
+        self.publish_status(init_status)
+        self.get_logger().info(f'Autonomous Frontier Exploration Node initialized ({init_status}).')
+
+    def command_callback(self, msg: String):
+        cmd = msg.data.strip().upper()
+        self.get_logger().info(f'Received Exploration Command: {cmd}')
+
+        if cmd in ['START', 'RESUME', 'EXPLORE']:
+            self.is_exploring = True
+            self.publish_status('EXPLORATION ACTIVE')
+            self.get_logger().info('>>> Autonomous exploration resumed.')
+
+        elif cmd in ['STOP', 'PAUSE', 'MANUAL', 'ESTOP', 'OVERRIDE']:
+            self.is_exploring = False
+            self.cancel_active_nav_goal()
+            self.publish_status('MANUAL CONTROL ACTIVE (Autonomy Paused)')
+            self.get_logger().info('>>> Autonomous exploration paused. Manual override active.')
+
+    def cancel_active_nav_goal(self):
+        """Immediately cancel any active Nav2 navigation goal."""
+        if self.active_goal_handle is not None and self.is_navigating:
+            self.get_logger().info('Canceling active Nav2 navigation goal for manual takeover...')
+            try:
+                self.active_goal_handle.cancel_goal_async()
+            except Exception as e:
+                self.get_logger().warn(f'Error canceling goal: {e}')
+        self.is_navigating = False
+        self.active_goal_handle = None
 
     def map_callback(self, msg: OccupancyGrid):
         self.current_map = msg
@@ -96,12 +127,10 @@ class FrontierExplorerNode(Node):
         is_free = (grid == 0)
         is_unknown = (grid == -1)
 
-        # Neighbor kernel (8-connectivity)
         frontiers = []
         free_indices = np.argwhere(is_free)
 
         for r, c in free_indices:
-            # Check 8 neighbors for unknown cells
             r_min = max(0, r - 1)
             r_max = min(height, r + 2)
             c_min = max(0, c - 1)
@@ -116,7 +145,7 @@ class FrontierExplorerNode(Node):
         return frontiers
 
     def cluster_frontiers(self, points, cluster_radius=0.6):
-        """Simple distance-based clustering for frontier points."""
+        """Distance-based clustering for frontier points."""
         clusters = []
         visited = set()
 
@@ -173,13 +202,13 @@ class FrontierExplorerNode(Node):
         )
 
         if not raw_frontiers:
-            self.publish_status('NO FRONTIERS DETECTED - MAP COVERED!')
+            self.publish_status('MAP 100% COVERED (No Frontiers)')
             return
 
         # 2. Cluster Frontiers
         clusters = self.cluster_frontiers(raw_frontiers)
         if not clusters:
-            self.publish_status('FRONTIERS TOO SMALL - MAP 100% COMPLETE!')
+            self.publish_status('MAP EXPLORATION COMPLETE')
             return
 
         # 3. Score & Select Best Frontier
@@ -197,7 +226,6 @@ class FrontierExplorerNode(Node):
                 continue
 
             dist = math.hypot(rx - cx, ry - cy)
-            # Score: shorter distance is better, larger cluster size is better
             score = dist - self.gain_weight * math.log(max(1, len(cluster)))
 
             if score < best_score:
@@ -214,9 +242,12 @@ class FrontierExplorerNode(Node):
             )
             self.send_nav_goal(best_target[0], best_target[1])
         else:
-            self.publish_status('EXPLORATION COMPLETE (All reachable frontiers explored)')
+            self.publish_status('EXPLORATION FINISHED (All Reachable Frontiers Explored)')
 
     def send_nav_goal(self, x, y):
+        if not self.is_exploring:
+            return
+
         if not self.nav_client.wait_for_server(timeout_sec=3.0):
             self.get_logger().warn('Nav2 Action Server not available')
             return
@@ -245,7 +276,13 @@ class FrontierExplorerNode(Node):
         )
 
     def goal_response_callback(self, future, target):
-        goal_handle = future.result()
+        try:
+            goal_handle = future.result()
+        except Exception as e:
+            self.get_logger().warn(f'Goal send failed: {e}')
+            self.is_navigating = False
+            return
+
         if not goal_handle.accepted:
             self.get_logger().warn(f'Goal {target} was rejected by Nav2')
             self.blacklist.append(target)
@@ -260,13 +297,15 @@ class FrontierExplorerNode(Node):
 
     def goal_result_callback(self, future, target):
         self.is_navigating = False
-        status = future.result().status
-        # Status 4 = STATUS_SUCCEEDED
-        if status == 4:
-            self.get_logger().info(f'Reached frontier goal {target} successfully!')
-        else:
-            self.get_logger().warn(f'Goal {target} aborted/canceled. Adding to blacklist.')
-            self.blacklist.append(target)
+        try:
+            status = future.result().status
+            if status == 4:  # STATUS_SUCCEEDED
+                self.get_logger().info(f'Reached frontier goal {target} successfully!')
+            else:
+                self.get_logger().warn(f'Goal {target} aborted/canceled.')
+                self.blacklist.append(target)
+        except Exception:
+            pass
 
     def nav_feedback_callback(self, feedback_msg):
         pass

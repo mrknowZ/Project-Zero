@@ -313,13 +313,33 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Quick Action Buttons
-document.getElementById('btn-estop').addEventListener('click', () => {
+document.getElementById('btn-manual-override').addEventListener('click', () => {
   stopTeleop();
-  alert('🛑 EMERGENCY BRAKE ENGAGED: Robot velocity locked to 0.0 m/s.');
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'exploration_cmd', command: 'PAUSE' }));
+  }
+  headerMode.innerText = 'Manual Override (Autonomy Paused)';
+  headerMode.parentElement.className = 'badge badge-terrain caution';
+  explorStatusBanner.innerText = '✋ Manual Override Active • Autonomy Paused • Drive with D-Pad or WASD';
 });
 
 document.getElementById('btn-explore').addEventListener('click', () => {
-  alert('⚡ Autonomous Frontier Exploration command dispatched.');
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'exploration_cmd', command: 'START' }));
+  }
+  headerMode.innerText = 'Autonomous Exploration';
+  headerMode.parentElement.className = 'badge badge-blue';
+  explorStatusBanner.innerText = '⚡ Autonomous Frontier Exploration Active...';
+});
+
+document.getElementById('btn-estop').addEventListener('click', () => {
+  stopTeleop();
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'estop' }));
+  }
+  headerMode.innerText = 'EMERGENCY BRAKE ENGAGED';
+  headerMode.parentElement.className = 'badge badge-terrain danger';
+  explorStatusBanner.innerText = '🛑 EMERGENCY BRAKE ENGAGED • Robot Velocity Locked to 0.0 m/s';
 });
 
 document.getElementById('btn-save-map').addEventListener('click', () => {
@@ -339,7 +359,9 @@ document.getElementById('btn-send-goal').addEventListener('click', () => {
       x: gx,
       y: gy
     }));
-    alert(`🎯 Navigation Goal dispatched to Map Pose: (X=${gx.toFixed(2)}, Y=${gy.toFixed(2)})`);
+    headerMode.innerText = `Navigating to Goal (${gx.toFixed(1)}, ${gy.toFixed(1)})`;
+    headerMode.parentElement.className = 'badge badge-blue';
+    explorStatusBanner.innerText = `🎯 Navigating to Custom Waypoint: (${gx.toFixed(2)}, ${gy.toFixed(2)})`;
   }
 });
 

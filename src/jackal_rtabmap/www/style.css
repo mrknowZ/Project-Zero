@@ -684,6 +684,17 @@ body {
   background-color: #475569;
 }
 
+.btn-warning {
+  background-color: #d97706;
+  color: #fff;
+  border-color: #b45309;
+  font-weight: 700;
+}
+
+.btn-warning:hover {
+  background-color: #b45309;
+}
+
 .btn-navy {
   background-color: #1e3a8a;
   border-color: #2563eb;
