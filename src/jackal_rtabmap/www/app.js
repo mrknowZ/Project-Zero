@@ -20,9 +20,8 @@ const slopeHeaderText = document.getElementById('slope-header-text');
 const slopeCardStatus = document.getElementById('slope-card-status');
 const cameraFeedTag = document.getElementById('camera-feed-tag');
 
-const horizonSky = document.querySelector('.horizon-sky');
-const horizonGround = document.querySelector('.horizon-ground');
-const horizonLine = document.querySelector('.horizon-line');
+const horizonCanvas = document.getElementById('horizon-canvas');
+const horizonCtx = horizonCanvas ? horizonCanvas.getContext('2d') : null;
 
 const valTotalSlope = document.getElementById('val-total-slope');
 const barSlope = document.getElementById('bar-slope');
@@ -38,7 +37,90 @@ const landmarksTbody = document.getElementById('landmarks-tbody');
 const landmarkCount = document.getElementById('landmark-count');
 const footerUptime = document.getElementById('footer-uptime');
 
-// 1. Initialize WebSocket Connection
+// 1. Draw Canvas-Based Artificial Horizon Attitude Gauge
+function drawHorizon(pitchDeg, rollDeg) {
+  if (!horizonCtx || !horizonCanvas) return;
+  const w = horizonCanvas.width;
+  const h = horizonCanvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = (w / 2) - 2;
+
+  horizonCtx.clearRect(0, 0, w, h);
+  horizonCtx.save();
+
+  // Circular clip to guarantee nothing ever overflows outside the ring
+  horizonCtx.beginPath();
+  horizonCtx.arc(cx, cy, r, 0, Math.PI * 2);
+  horizonCtx.clip();
+
+  // Rotate & Translate by roll and pitch
+  horizonCtx.translate(cx, cy);
+  horizonCtx.rotate((-rollDeg * Math.PI) / 180);
+  const pitchPx = Math.max(-r, Math.min(r, pitchDeg * 1.5));
+  horizonCtx.translate(0, pitchPx);
+
+  // Draw Sky (Solid Navy Blue #0369a1)
+  horizonCtx.fillStyle = '#0369a1';
+  horizonCtx.fillRect(-w, -h * 2, w * 2, h * 2);
+
+  // Draw Ground (Solid Earth Brown #78350f)
+  horizonCtx.fillStyle = '#78350f';
+  horizonCtx.fillRect(-w, 0, w * 2, h * 2);
+
+  // Draw Horizon White Line
+  horizonCtx.strokeStyle = '#ffffff';
+  horizonCtx.lineWidth = 2;
+  horizonCtx.beginPath();
+  horizonCtx.moveTo(-w, 0);
+  horizonCtx.lineTo(w, 0);
+  horizonCtx.stroke();
+
+  // Pitch ladder marks
+  horizonCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  horizonCtx.lineWidth = 1;
+  for (let deg = -30; deg <= 30; deg += 10) {
+    if (deg === 0) continue;
+    const y = -deg * 1.5;
+    const len = deg % 20 === 0 ? 20 : 10;
+    horizonCtx.beginPath();
+    horizonCtx.moveTo(-len / 2, y);
+    horizonCtx.lineTo(len / 2, y);
+    horizonCtx.stroke();
+  }
+
+  horizonCtx.restore();
+
+  // Fixed Yellow Reticle in center
+  horizonCtx.save();
+  horizonCtx.strokeStyle = '#f59e0b';
+  horizonCtx.lineWidth = 3;
+  // Left wing
+  horizonCtx.beginPath();
+  horizonCtx.moveTo(cx - 24, cy);
+  horizonCtx.lineTo(cx - 8, cy);
+  horizonCtx.stroke();
+  // Right wing
+  horizonCtx.beginPath();
+  horizonCtx.moveTo(cx + 8, cy);
+  horizonCtx.lineTo(cx + 24, cy);
+  horizonCtx.stroke();
+  // Center dot
+  horizonCtx.fillStyle = '#f59e0b';
+  horizonCtx.beginPath();
+  horizonCtx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+  horizonCtx.fill();
+
+  // Outer border ring
+  horizonCtx.strokeStyle = '#334155';
+  horizonCtx.lineWidth = 2;
+  horizonCtx.beginPath();
+  horizonCtx.arc(cx, cy, r, 0, Math.PI * 2);
+  horizonCtx.stroke();
+  horizonCtx.restore();
+}
+
+// 2. Initialize WebSocket Connection
 function connectWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -71,7 +153,7 @@ function connectWebSocket() {
   };
 }
 
-// 2. Update Live Telemetry
+// 3. Update Live Telemetry
 function updateTelemetry(data) {
   // A. Slope & Inclinometer Telemetry
   if (data.slope) {
@@ -88,12 +170,8 @@ function updateTelemetry(data) {
     const pct = Math.min(100, Math.max(2, (total / 35.0) * 100));
     barSlope.style.width = `${pct}%`;
 
-    // Horizon Artificial Gimbal Animation (Translate Y by pitch, rotate by roll)
-    const pitchOffset = Math.max(-30, Math.min(30, pitch * 1.8));
-    const transformStr = `translateY(${pitchOffset}px) rotate(${-roll}deg)`;
-    horizonSky.style.transform = transformStr;
-    horizonGround.style.transform = transformStr;
-    horizonLine.style.transform = `translateY(calc(-50% + ${pitchOffset}px)) rotate(${-roll}deg)`;
+    // Render Canvas Attitude Horizon
+    drawHorizon(pitch, roll);
 
     // Solid Status Colors
     slopeHeaderBadge.className = `badge badge-terrain ${status.toLowerCase()}`;
@@ -115,7 +193,7 @@ function updateTelemetry(data) {
   if (data.has_yolo) {
     cameraFeedTag.innerText = 'YOLOV8 SEMANTIC • ACTIVE';
   } else {
-    cameraFeedTag.innerText = 'RAW OPTICAL STREAM';
+    cameraFeedTag.innerText = 'OPTICAL STREAM';
   }
 
   // C. Odometry & Exploration Status
@@ -150,7 +228,7 @@ function updateTelemetry(data) {
   }
 }
 
-// 3. Teleoperation & Remote Controls
+// 4. Teleoperation & Remote Controls
 function sendCmdVel(linear, angular) {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({
@@ -276,5 +354,6 @@ setInterval(() => {
 
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
+  drawHorizon(0, 0);
   connectWebSocket();
 });
