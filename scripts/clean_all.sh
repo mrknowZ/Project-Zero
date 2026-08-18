@@ -4,8 +4,8 @@
 # Kills all simulation, ROS 2, Nav2, Gazebo, RViz, and vision nodes cleanly.
 # ==============================================================================
 
-echo ">>> Terminating all active ROS2, Gazebo, Nav2, and RViz processes..."
-ps -ef | grep -E "ros|gz|ign|nav2|planner|controller|amcl|mission|yolo|rviz|rqt|slam" | grep -v grep | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+echo ">>> Terminating all active ROS2, Gazebo, Nav2, RViz, and Custom Autonomy nodes..."
+ps -ef | grep -E "ros|gz|ign|nav2|planner|controller|amcl|mission|yolo|rviz|rqt|slam|inclinometer|explorer|semantic|bridge|tornado" | grep -v grep | awk '{print $2}' | xargs kill -9 2>/dev/null || true
 
 sleep 1
 echo ">>> Resetting ROS 2 daemon..."

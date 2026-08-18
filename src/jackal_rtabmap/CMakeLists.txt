@@ -15,6 +15,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(vision_msgs REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
 
@@ -31,7 +33,19 @@ install(PROGRAMS
   RENAME frontier_explorer_node
 )
 
-install(DIRECTORY launch config
+install(PROGRAMS
+  jackal_rtabmap/semantic_object_mapper_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME semantic_object_mapper_node
+)
+
+install(PROGRAMS
+  jackal_rtabmap/web_telemetry_bridge_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME web_telemetry_bridge_node
+)
+
+install(DIRECTORY launch config www
   DESTINATION share/${PROJECT_NAME}
 )
 

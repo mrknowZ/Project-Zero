@@ -3,7 +3,7 @@
 <package format="3">
   <name>jackal_rtabmap</name>
   <version>1.0.0</version>
-  <description>3D RTAB-Map SLAM, Terrain Elevation, Slope Mapping, and Inclinometer Safety pipeline for Clearpath Jackal J100</description>
+  <description>3D RTAB-Map SLAM, Terrain Elevation, Slope Mapping, Inclinometer Safety, Autonomous Exploration, and Web Dashboard for Clearpath Jackal J100</description>
   <maintainer email="alisherhaderi5@gmail.com">mrknowZ</maintainer>
   <license>Apache-2.0</license>
 
@@ -16,8 +16,10 @@
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>vision_msgs</depend>
   <depend>std_msgs</depend>
   <depend>tf2_ros</depend>
+  <depend>cv_bridge</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
