@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """
 Web & Tablet Telemetry Bridge Node for Clearpath Jackal J100
-Serves a modern HTML5/JS dashboard on port 8080.
-Bridges ROS 2 topics (Odometry, Slope Inclinometer, 3D Semantic Landmarks,
-Autonomous Exploration Status, MJPEG Camera Feed, and Remote Touch Teleop).
+Serves a professional, human-designed industrial UI on port 8080.
+Bridges ROS 2 topics:
+  - Odometry & Velocity
+  - 6-DoF Terrain Slope & Inclinometer
+  - 3D Semantic Object Landmark Registry
+  - High-Reliability Camera Feed (Dual-Stream YOLO / Raw Color Fallback)
+  - Remote Teleoperation & Goal Navigation Dispatch
+  - Map Saving Service
 """
 
 import json
 import math
 import os
+import subprocess
 import threading
 import cv2
 import numpy as np
@@ -20,7 +26,7 @@ import tornado.web
 import tornado.websocket
 import tornado.ioloop
 
-from geometry_msgs.msg import Twist, Vector3Stamped
+from geometry_msgs.msg import Twist, Vector3Stamped, PoseStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
@@ -46,9 +52,11 @@ def imgmsg_to_cv2(img_msg: Image) -> np.ndarray:
 state = {
     'slope': {'roll': 0.0, 'pitch': 0.0, 'total': 0.0, 'status': 'SAFE'},
     'odom': {'x': 0.0, 'y': 0.0, 'yaw': 0.0, 'speed': 0.0, 'angular': 0.0},
-    'exploration': {'status': 'IDLE', 'frontiers': 0, 'target': None},
+    'exploration': {'status': 'AUTONOMOUS NAVIGATION READY', 'frontiers': 0, 'target': None},
     'landmarks': [],
     'latest_frame_jpeg': None,
+    'has_yolo': False,
+    'map_save_status': 'IDLE',
 }
 
 ws_clients = set()
@@ -84,7 +92,7 @@ class VideoFeedHandler(tornado.web.RequestHandler):
                 self.write(b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
                 await self.flush()
-            await tornado.gen.sleep(0.066)  # ~15 FPS
+            await tornado.gen.sleep(0.05)  # 20 FPS
 
 
 class TelemetryWebSocket(tornado.websocket.WebSocketHandler):
@@ -106,8 +114,29 @@ class TelemetryWebSocket(tornado.websocket.WebSocketHandler):
                 linear = float(data.get('linear', 0.0))
                 angular = float(data.get('angular', 0.0))
                 ros_node.publish_cmd_vel(linear, angular)
+
+            elif msg_type == 'nav_goal' and ros_node is not None:
+                gx = float(data.get('x', 0.0))
+                gy = float(data.get('y', 0.0))
+                ros_node.send_navigation_goal(gx, gy)
+
+            elif msg_type == 'save_map':
+                threading.Thread(target=save_map_task, daemon=True).start()
+
         except Exception:
             pass
+
+
+def save_map_task():
+    try:
+        maps_dir = '/home/holetown/ali/Project-Zero/maps'
+        os.makedirs(maps_dir, exist_ok=True)
+        map_path = os.path.join(maps_dir, 'jackal_farm_map')
+        cmd = f"source /opt/ros/humble/setup.bash && ros2 run nav2_map_server map_saver_cli -f {map_path} --ros-args -r __ns:=/j100_0000"
+        subprocess.run(cmd, shell=True, executable='/bin/bash', timeout=15)
+        state['map_save_status'] = 'SAVED_OK'
+    except Exception as e:
+        state['map_save_status'] = f'ERROR: {e}'
 
 
 def broadcast_telemetry():
@@ -119,6 +148,8 @@ def broadcast_telemetry():
         'odom': state['odom'],
         'exploration': state['exploration'],
         'landmarks': state['landmarks'],
+        'has_yolo': state['has_yolo'],
+        'map_save_status': state['map_save_status'],
     })
 
     for client in list(ws_clients):
@@ -134,8 +165,9 @@ class WebTelemetryBridgeNode(Node):
         global ros_node
         ros_node = self
 
-        # Teleop publisher
+        # Teleop & Navigation publishers
         self.cmd_vel_pub = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
         # QoS
         sensor_qos = QoSProfile(
@@ -160,17 +192,33 @@ class WebTelemetryBridgeNode(Node):
         self.landmarks_sub = self.create_subscription(
             String, 'semantic_map/objects_json', self.landmarks_callback, 10
         )
-        self.image_sub = self.create_subscription(
-            Image, 'yolo_detector/detections_image', self.image_callback, sensor_qos
+
+        # Dual Image Subscriptions: YOLO detections + Raw Camera Fallback
+        self.yolo_image_sub = self.create_subscription(
+            Image, 'yolo_detector/detections_image', self.yolo_image_callback, sensor_qos
+        )
+        self.raw_image_sub = self.create_subscription(
+            Image, 'sensors/camera_0/image_color', self.raw_image_callback, sensor_qos
         )
 
-        self.get_logger().info('Web & Tablet Telemetry Bridge Node initialized.')
+        self.get_logger().info('Web Industrial Telemetry Bridge Node initialized.')
 
     def publish_cmd_vel(self, linear, angular):
         twist = Twist()
         twist.linear.x = max(-0.8, min(0.8, linear))
         twist.angular.z = max(-1.2, min(1.2, angular))
         self.cmd_vel_pub.publish(twist)
+
+    def send_navigation_goal(self, gx, gy):
+        goal = PoseStamped()
+        goal.header.stamp = self.get_clock().now().to_msg()
+        goal.header.frame_id = 'map'
+        goal.pose.position.x = float(gx)
+        goal.pose.position.y = float(gy)
+        goal.pose.position.z = 0.0
+        goal.pose.orientation.w = 1.0
+        self.goal_pub.publish(goal)
+        self.get_logger().info(f'Dispatched Nav2 Goal via Web: ({gx:.2f}, {gy:.2f})')
 
     def slope_callback(self, msg: Vector3Stamped):
         state['slope']['roll'] = round(msg.vector.x, 1)
@@ -209,15 +257,28 @@ class WebTelemetryBridgeNode(Node):
         except Exception:
             pass
 
-    def image_callback(self, msg: Image):
+    def yolo_image_callback(self, msg: Image):
         try:
             cv_img = imgmsg_to_cv2(msg)
             if cv_img is not None:
+                state['has_yolo'] = True
                 small_img = cv2.resize(cv_img, (640, 360))
-                _, buffer = cv2.imencode('.jpg', small_img, [cv2.IMWRITE_JPEG_QUALITY, 70])
+                _, buffer = cv2.imencode('.jpg', small_img, [cv2.IMWRITE_JPEG_QUALITY, 75])
                 state['latest_frame_jpeg'] = buffer.tobytes()
         except Exception:
             pass
+
+    def raw_image_callback(self, msg: Image):
+        # Fallback to raw camera feed if YOLO detections not yet published
+        if not state['has_yolo'] or state['latest_frame_jpeg'] is None:
+            try:
+                cv_img = imgmsg_to_cv2(msg)
+                if cv_img is not None:
+                    small_img = cv2.resize(cv_img, (640, 360))
+                    _, buffer = cv2.imencode('.jpg', small_img, [cv2.IMWRITE_JPEG_QUALITY, 75])
+                    state['latest_frame_jpeg'] = buffer.tobytes()
+            except Exception:
+                pass
 
 
 def start_tornado_server():
@@ -233,7 +294,7 @@ def start_tornado_server():
 
     port = 8080
     app.listen(port)
-    print(f'>>> Jackal Web & Tablet Telemetry Dashboard online at http://localhost:{port}')
+    print(f'>>> Jackal Web Industrial Mission Control online at http://localhost:{port}')
 
     tornado.ioloop.PeriodicCallback(broadcast_telemetry, 100).start()
     tornado.ioloop.IOLoop.current().start()

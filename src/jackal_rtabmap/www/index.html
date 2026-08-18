@@ -3,212 +3,270 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jackal J100 • Advanced Autonomy Mission Control</title>
+  <title>Clearpath Jackal J100 • Industrial Autonomy Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Top Header -->
-    <header class="top-navbar">
-      <div class="logo-group">
-        <div class="robot-pulse"></div>
-        <div class="logo-titles">
-          <h1>JACKAL <span>J100</span></h1>
-          <span class="subtext">3D RTAB-Map & Autonomous Autonomy Stack</span>
+  <div class="app-layout">
+    
+    <!-- Top App Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-indicator"></div>
+        <div class="brand-text">
+          <h1>CLEARPATH JACKAL <span class="badge-tag">J100</span></h1>
+          <p class="subtitle">Field Autonomy, 3D Voxel Costmaps & RTAB-Map SLAM</p>
         </div>
       </div>
 
-      <div class="header-status-pills">
-        <div class="pill connection-pill" id="conn-status">
-          <span class="dot"></span> <span id="conn-text">Connecting...</span>
+      <div class="header-badges">
+        <div class="badge badge-success" id="conn-status">
+          <span class="status-dot"></span>
+          <span id="conn-text">System Connected</span>
         </div>
-        <div class="pill mode-pill" id="mode-badge">
-          <span>MODE:</span> <strong>AUTONOMOUS SLAM</strong>
+        <div class="badge badge-blue">
+          <span>Mode:</span> <strong id="header-mode">Autonomous Navigation</strong>
         </div>
-        <div class="pill slope-pill safe" id="slope-header-pill">
-          <span id="slope-header-status">SLOPE: 0.0° [SAFE]</span>
+        <div class="badge badge-terrain" id="slope-header-badge">
+          <span id="slope-header-text">Slope: 0.0° [Safe]</span>
         </div>
       </div>
     </header>
 
-    <!-- Main Grid Layout -->
-    <main class="dashboard-grid">
+    <!-- Main 2-Column Grid -->
+    <main class="main-grid">
       
-      <!-- Left Column: Vision & 3D Telemetry -->
-      <section class="grid-col col-vision">
+      <!-- Left Panel: Optical Stream & Semantic Inventory -->
+      <div class="grid-col col-left">
         
-        <!-- Live YOLO Camera Feed Card -->
-        <div class="card card-video">
-          <div class="card-header">
-            <div class="card-title">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-              <h3>Live Camera & YOLOv8 Semantic Vision</h3>
+        <!-- Live Video Feed Card -->
+        <section class="panel panel-camera">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <h2>Live Camera & YOLOv8 Vision</h2>
             </div>
-            <span class="feed-live-badge">LIVE STREAM</span>
-          </div>
-          <div class="video-container">
-            <img id="video-stream" src="/video_feed" alt="Jackal Camera Feed" onerror="this.src='https://via.placeholder.com/640x360/1a1b26/7aa2f7?text=Waiting+for+ROS2+Video+Feed...'">
-            <div class="video-overlay-data">
-              <span id="video-fps">15 FPS</span>
-              <span id="video-res">640x360</span>
+            <div class="panel-actions">
+              <span class="feed-status" id="camera-feed-tag">OPTICAL FEED • ACTIVE</span>
             </div>
           </div>
-        </div>
 
-        <!-- 3D Semantic Landmarks Discovered Card -->
-        <div class="card card-landmarks">
-          <div class="card-header">
-            <div class="card-title">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-              <h3>3D Semantic Map Inventory</h3>
+          <div class="video-frame">
+            <img id="video-stream" src="/video_feed" alt="Jackal Live Camera Feed" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'640\' height=\'360\' viewBox=\'0 0 640 360\'><rect width=\'100%\' height=\'100%\' fill=\'%231e293b\'/><text x=\'50%\' y=\'50%\' fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'16\' text-anchor=\'middle\'>Waiting for ROS 2 camera stream...</text></svg>'">
+            <div class="video-hud">
+              <span class="hud-item" id="hud-fps">20 FPS</span>
+              <span class="hud-item" id="hud-res">640 × 360</span>
             </div>
-            <span class="badge-counter" id="landmark-count">0 Objects</span>
           </div>
-          <div class="table-scroll-container">
-            <table class="semantic-table">
+        </section>
+
+        <!-- 3D Semantic Landmarks Table -->
+        <section class="panel panel-inventory">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <h2>3D Semantic Spatial Inventory</h2>
+            </div>
+            <span class="pill-count" id="landmark-count">0 Tracked Items</span>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Class</th>
+                  <th style="width: 50px;">ID</th>
+                  <th>Object Class</th>
                   <th>Confidence</th>
-                  <th>Map (X, Y, Z)</th>
-                  <th>Observations</th>
+                  <th>Map Coordinates (X, Y, Z)</th>
+                  <th>Detections</th>
                 </tr>
               </thead>
               <tbody id="landmarks-tbody">
-                <tr class="empty-row">
-                  <td colspan="5">Scanning environment for objects...</td>
+                <tr class="table-placeholder">
+                  <td colspan="5">Scanning surroundings for semantic objects...</td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-      </section>
+      </div>
 
-      <!-- Right Column: Slope Inclinometer, Autonomy, & Teleop -->
-      <section class="grid-col col-telemetry">
+      <!-- Right Panel: Slope Safety, Pose Telemetry & Teleop Controls -->
+      <div class="grid-col col-right">
         
-        <!-- Slope Inclinometer & Artificial Horizon -->
-        <div class="card card-slope">
-          <div class="card-header">
-            <div class="card-title">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-              <h3>Slope Traversability & Inclinometer</h3>
+        <!-- Slope Traversability & Inclinometer -->
+        <section class="panel panel-slope">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <h2>Terrain Slope & Inclinometer</h2>
             </div>
-            <span class="status-tag status-safe" id="slope-card-status">SAFE</span>
+            <span class="status-chip chip-safe" id="slope-card-status">SAFE</span>
           </div>
 
-          <div class="slope-content">
-            <!-- Artificial Horizon Instrument -->
-            <div class="horizon-wrapper">
-              <div class="horizon-ring" id="horizon-ring">
+          <div class="slope-grid">
+            <!-- Attitude / Horizon Gauge -->
+            <div class="gauge-container">
+              <div class="horizon-instrument">
                 <div class="horizon-sky"></div>
                 <div class="horizon-ground"></div>
                 <div class="horizon-line"></div>
-                <div class="robot-reticle"></div>
+                <div class="horizon-crosshair"></div>
               </div>
-              <div class="horizon-label">6-DoF Terrain Tilt</div>
+              <span class="gauge-label">Attitude Horizon</span>
             </div>
 
-            <!-- Inclinometer Metrics -->
-            <div class="slope-metrics-grid">
-              <div class="metric-card">
-                <span class="metric-label">TOTAL INCLINE</span>
-                <span class="metric-value" id="val-total-slope">0.0°</span>
-                <div class="progress-bar-bg">
-                  <div class="progress-bar-fill" id="bar-slope" style="width: 2%;"></div>
+            <!-- Incline Metrics -->
+            <div class="metric-tiles">
+              <div class="tile tile-primary">
+                <span class="tile-label">TOTAL INCLINE</span>
+                <div class="tile-val-row">
+                  <span class="tile-value" id="val-total-slope">0.0°</span>
+                  <span class="tile-limit">Max: 35.0°</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-bar" id="bar-slope" style="width: 2%;"></div>
                 </div>
               </div>
-              <div class="metric-card">
-                <span class="metric-label">PITCH (TILT)</span>
-                <span class="metric-value" id="val-pitch">0.0°</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-label">ROLL (LEAN)</span>
-                <span class="metric-value" id="val-roll">0.0°</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Autonomous Exploration & SLAM Status -->
-        <div class="card card-exploration">
-          <div class="card-header">
-            <div class="card-title">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-              <h3>Autonomous Exploration & Mapping</h3>
-            </div>
-            <span class="badge-pulse" id="explor-pulse">ACTIVE</span>
-          </div>
-          <div class="exploration-details">
-            <div class="status-banner" id="exploration-status-banner">
-              EXPLORING ENVIRONMENT
-            </div>
-            <div class="nav-coords-row">
-              <div class="coord-box">
-                <span class="lbl">ROBOT POSE</span>
-                <span class="val" id="val-pose">X: 0.00m, Y: 0.00m</span>
+              <div class="tile">
+                <span class="tile-label">PITCH (FORE/AFT)</span>
+                <span class="tile-value" id="val-pitch">0.0°</span>
               </div>
-              <div class="coord-box">
-                <span class="lbl">HEADING (YAW)</span>
-                <span class="val" id="val-yaw">0.0°</span>
-              </div>
-              <div class="coord-box">
-                <span class="lbl">LINEAR VELOCITY</span>
-                <span class="val" id="val-speed">0.00 m/s</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Virtual Touch Teleop & Controls -->
-        <div class="card card-teleop">
-          <div class="card-header">
-            <div class="card-title">
+              <div class="tile">
+                <span class="tile-label">ROLL (LATERAL)</span>
+                <span class="tile-value" id="val-roll">0.0°</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Odometry & Navigation Status -->
+        <section class="panel panel-telemetry">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+              <h2>Localization & Mission Status</h2>
+            </div>
+          </div>
+
+          <div class="mission-status-box" id="exploration-status-banner">
+            Autonomous Navigation Active • Mapping Environment
+          </div>
+
+          <div class="telemetry-row">
+            <div class="telemetry-card">
+              <span class="t-label">COORDINATES (MAP)</span>
+              <span class="t-val" id="val-pose">X: 0.00m, Y: 0.00m</span>
+            </div>
+            <div class="telemetry-card">
+              <span class="t-label">HEADING (YAW)</span>
+              <span class="t-val" id="val-yaw">0.0°</span>
+            </div>
+            <div class="telemetry-card">
+              <span class="t-label">VELOCITY</span>
+              <span class="t-val" id="val-speed">0.00 m/s</span>
+            </div>
+          </div>
+
+          <!-- Quick Goal Dispatch -->
+          <div class="goal-input-section">
+            <span class="section-subtitle">Dispatch Nav2 Waypoint Goal:</span>
+            <div class="goal-input-row">
+              <div class="input-group">
+                <label for="goal-x">Target X (m)</label>
+                <input type="number" id="goal-x" step="0.5" value="2.0">
+              </div>
+              <div class="input-group">
+                <label for="goal-y">Target Y (m)</label>
+                <input type="number" id="goal-y" step="0.5" value="2.0">
+              </div>
+              <button class="btn btn-navy" id="btn-send-goal">
+                <span>Send Goal</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Remote Teleoperation Cockpit -->
+        <section class="panel panel-teleop">
+          <div class="panel-header">
+            <div class="panel-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
-              <h3>Remote Teleop & Mission Control</h3>
+              <h2>Industrial Teleoperation Cockpit</h2>
+            </div>
+            <!-- Speed Selector -->
+            <div class="speed-selector">
+              <button class="speed-btn active" data-speed="0.4">Slow</button>
+              <button class="speed-btn" data-speed="0.7">Normal</button>
+              <button class="speed-btn" data-speed="1.0">Fast</button>
             </div>
           </div>
 
-          <div class="teleop-body">
-            <!-- Virtual Joystick D-Pad -->
-            <div class="dpad-container">
-              <button class="dpad-btn btn-up" id="btn-fwd" title="Forward (W)">▲</button>
-              <div class="dpad-middle">
-                <button class="dpad-btn btn-left" id="btn-left" title="Turn Left (A)">◀</button>
-                <button class="dpad-btn btn-stop" id="btn-stop" title="Stop (Space)">■</button>
-                <button class="dpad-btn btn-right" id="btn-right" title="Turn Right (D)">▶</button>
+          <div class="teleop-controls">
+            <!-- Physical-style D-Pad -->
+            <div class="dpad">
+              <button class="dpad-btn btn-up" id="btn-fwd" title="Drive Forward (W)">
+                <span class="arrow">▲</span>
+                <span class="key-hint">W</span>
+              </button>
+              <div class="dpad-row">
+                <button class="dpad-btn btn-left" id="btn-left" title="Turn Left (A)">
+                  <span class="arrow">◀</span>
+                  <span class="key-hint">A</span>
+                </button>
+                <button class="dpad-btn btn-center-stop" id="btn-stop" title="Stop (Space)">
+                  <span class="arrow">■</span>
+                  <span class="key-hint">STOP</span>
+                </button>
+                <button class="dpad-btn btn-right" id="btn-right" title="Turn Right (D)">
+                  <span class="arrow">▶</span>
+                  <span class="key-hint">D</span>
+                </button>
               </div>
-              <button class="dpad-btn btn-down" id="btn-rev" title="Reverse (S)">▼</button>
+              <button class="dpad-btn btn-down" id="btn-rev" title="Reverse (S)">
+                <span class="arrow">▼</span>
+                <span class="key-hint">S</span>
+              </button>
             </div>
 
-            <!-- Quick Action Command Buttons -->
-            <div class="action-buttons-group">
-              <button class="btn-action btn-primary" id="btn-explore">
-                <span>⚡ Auto Explore</span>
+            <!-- Action Control Buttons -->
+            <div class="command-actions">
+              <button class="btn btn-primary" id="btn-explore">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Autonomous Frontier Explore</span>
               </button>
-              <button class="btn-action btn-secondary" id="btn-save-map">
-                <span>💾 Save Map</span>
+              <button class="btn btn-secondary" id="btn-save-map">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span>Save 2D/3D Map to Disk</span>
               </button>
-              <button class="btn-action btn-danger" id="btn-estop">
-                <span>🛑 E-STOP</span>
+              <button class="btn btn-danger" id="btn-estop">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>EMERGENCY BRAKE (E-STOP)</span>
               </button>
             </div>
           </div>
-        </div>
+        </section>
 
-      </section>
+      </div>
+
     </main>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <span>Clearpath Jackal J100 Autonomy Stack • ROS 2 Humble • Project Zero SAFiR Lab</span>
-      <span id="footer-time">Uptime: 00:00:00</span>
+    <!-- Bottom Status Bar -->
+    <footer class="footer">
+      <div class="footer-left">
+        <span>Jackal J100 Field Robotics Pipeline • University / Industrial Standard ROS 2 Architecture</span>
+      </div>
+      <div class="footer-right">
+        <span id="footer-uptime">Session Duration: 00:00:00</span>
+      </div>
     </footer>
+
   </div>
 
   <script src="app.js"></script>

@@ -1,9 +1,11 @@
 /**
- * Jackal J100 Advanced Autonomy Mission Control - Frontend Logic
- * Real-time WebSocket Telemetry & Teleoperation Engine
+ * Clearpath Jackal J100 • Industrial Autonomy Dashboard
+ * Frontend WebSocket Engine & Mission Control Teleoperation
  */
 
 let ws = null;
+let currentSpeedLinear = 0.6;
+let currentSpeedAngular = 0.9;
 let currentLinear = 0.0;
 let currentAngular = 0.0;
 let teleopTimer = null;
@@ -12,9 +14,11 @@ let startTime = Date.now();
 // DOM Elements
 const connStatus = document.getElementById('conn-status');
 const connText = document.getElementById('conn-text');
-const slopeHeaderPill = document.getElementById('slope-header-pill');
-const slopeHeaderStatus = document.getElementById('slope-header-status');
+const headerMode = document.getElementById('header-mode');
+const slopeHeaderBadge = document.getElementById('slope-header-badge');
+const slopeHeaderText = document.getElementById('slope-header-text');
 const slopeCardStatus = document.getElementById('slope-card-status');
+const cameraFeedTag = document.getElementById('camera-feed-tag');
 
 const horizonSky = document.querySelector('.horizon-sky');
 const horizonGround = document.querySelector('.horizon-ground');
@@ -32,7 +36,7 @@ const valSpeed = document.getElementById('val-speed');
 
 const landmarksTbody = document.getElementById('landmarks-tbody');
 const landmarkCount = document.getElementById('landmark-count');
-const footerTime = document.getElementById('footer-time');
+const footerUptime = document.getElementById('footer-uptime');
 
 // 1. Initialize WebSocket Connection
 function connectWebSocket() {
@@ -42,9 +46,9 @@ function connectWebSocket() {
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
-    connStatus.className = 'pill connection-pill';
-    connText.innerText = 'ONLINE (FastDDS)';
-    console.log('[Jackal Mission Control] WebSocket connected.');
+    connStatus.className = 'badge badge-success';
+    connText.innerText = 'ROS 2 Humble • Connected';
+    console.log('[Jackal Mission Control] Connected to ROS 2 Telemetry Bridge.');
   };
 
   ws.onmessage = (event) => {
@@ -52,17 +56,17 @@ function connectWebSocket() {
       const data = JSON.parse(event.data);
       updateTelemetry(data);
     } catch (e) {
-      console.error('Error parsing telemetry payload:', e);
+      console.error('Error parsing telemetry JSON:', e);
     }
   };
 
   ws.onclose = () => {
-    connStatus.className = 'pill connection-pill disconnected';
-    connText.innerText = 'OFFLINE (Retrying...)';
+    connStatus.className = 'badge badge-terrain danger';
+    connText.innerText = 'Offline (Reconnecting...)';
     setTimeout(connectWebSocket, 2000);
   };
 
-  ws.onerror = (err) => {
+  ws.onerror = () => {
     ws.close();
   };
 }
@@ -85,29 +89,36 @@ function updateTelemetry(data) {
     barSlope.style.width = `${pct}%`;
 
     // Horizon Artificial Gimbal Animation (Translate Y by pitch, rotate by roll)
-    const pitchOffset = Math.max(-40, Math.min(40, pitch * 2));
+    const pitchOffset = Math.max(-30, Math.min(30, pitch * 1.8));
     const transformStr = `translateY(${pitchOffset}px) rotate(${-roll}deg)`;
     horizonSky.style.transform = transformStr;
     horizonGround.style.transform = transformStr;
     horizonLine.style.transform = `translateY(calc(-50% + ${pitchOffset}px)) rotate(${-roll}deg)`;
 
-    // Colors & Status Badges
-    slopeHeaderPill.className = `pill slope-pill ${status.toLowerCase()}`;
-    slopeHeaderStatus.innerText = `SLOPE: ${total.toFixed(1)}° [${status}]`;
+    // Solid Status Colors
+    slopeHeaderBadge.className = `badge badge-terrain ${status.toLowerCase()}`;
+    slopeHeaderText.innerText = `Slope: ${total.toFixed(1)}° [${status}]`;
 
-    slopeCardStatus.className = `status-tag status-${status.toLowerCase()}`;
+    slopeCardStatus.className = `status-chip chip-${status.toLowerCase()}`;
     slopeCardStatus.innerText = status;
 
     if (status === 'DANGER') {
-      barSlope.style.backgroundColor = '#f85149';
+      barSlope.style.backgroundColor = '#dc2626'; // Solid red
     } else if (status === 'CAUTION') {
-      barSlope.style.backgroundColor = '#d29922';
+      barSlope.style.backgroundColor = '#d97706'; // Solid amber
     } else {
-      barSlope.style.backgroundColor = '#3fb950';
+      barSlope.style.backgroundColor = '#059669'; // Solid emerald green
     }
   }
 
-  // B. Odometry & Exploration Status
+  // B. Camera Feed Mode
+  if (data.has_yolo) {
+    cameraFeedTag.innerText = 'YOLOV8 SEMANTIC • ACTIVE';
+  } else {
+    cameraFeedTag.innerText = 'RAW OPTICAL STREAM';
+  }
+
+  // C. Odometry & Exploration Status
   if (data.odom) {
     valPose.innerText = `X: ${data.odom.x.toFixed(2)}m, Y: ${data.odom.y.toFixed(2)}m`;
     valYaw.innerText = `${data.odom.yaw.toFixed(1)}°`;
@@ -115,12 +126,12 @@ function updateTelemetry(data) {
   }
 
   if (data.exploration) {
-    explorStatusBanner.innerText = data.exploration.status || 'AUTONOMOUS NAVIGATION READY';
+    explorStatusBanner.innerText = data.exploration.status || 'Autonomous Navigation Active • Mapping Environment';
   }
 
-  // C. 3D Semantic Landmarks Table
+  // D. 3D Semantic Landmarks Table
   if (data.landmarks && Array.isArray(data.landmarks)) {
-    landmarkCount.innerText = `${data.landmarks.length} Objects`;
+    landmarkCount.innerText = `${data.landmarks.length} Tracked Items`;
 
     if (data.landmarks.length > 0) {
       landmarksTbody.innerHTML = '';
@@ -128,10 +139,10 @@ function updateTelemetry(data) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td><strong>#${lm.id}</strong></td>
-          <td><span style="color: var(--accent-cyan); font-weight:600;">🏷️ ${lm.label}</span></td>
-          <td><span style="color: var(--accent-green); font-weight:600;">${Math.round(lm.score * 100)}%</span></td>
+          <td><strong style="color: #60a5fa;">${lm.label.toUpperCase()}</strong></td>
+          <td><span style="color: #34d399; font-weight:600;">${Math.round(lm.score * 100)}%</span></td>
           <td>(${lm.x.toFixed(2)}, ${lm.y.toFixed(2)}, ${lm.z.toFixed(2)})</td>
-          <td>${lm.count}x hits</td>
+          <td>${lm.count} hits</td>
         `;
         landmarksTbody.appendChild(tr);
       });
@@ -139,7 +150,7 @@ function updateTelemetry(data) {
   }
 }
 
-// 3. Teleoperation & Remote Joystick Controls
+// 3. Teleoperation & Remote Controls
 function sendCmdVel(linear, angular) {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({
@@ -150,9 +161,9 @@ function sendCmdVel(linear, angular) {
   }
 }
 
-function startContinuousTeleop(linear, angular) {
-  currentLinear = linear;
-  currentAngular = angular;
+function startContinuousTeleop(linDir, angDir) {
+  currentLinear = linDir * currentSpeedLinear;
+  currentAngular = angDir * currentSpeedAngular;
   sendCmdVel(currentLinear, currentAngular);
 
   if (teleopTimer) clearInterval(teleopTimer);
@@ -178,32 +189,44 @@ const btnLeft = document.getElementById('btn-left');
 const btnRight = document.getElementById('btn-right');
 const btnStop = document.getElementById('btn-stop');
 
-function attachButtonControls(btn, lin, ang) {
-  btn.addEventListener('mousedown', (e) => { e.preventDefault(); startContinuousTeleop(lin, ang); btn.classList.add('active'); });
+function attachButtonControls(btn, linDir, angDir) {
+  btn.addEventListener('mousedown', (e) => { e.preventDefault(); startContinuousTeleop(linDir, angDir); btn.classList.add('active'); });
   btn.addEventListener('mouseup', (e) => { e.preventDefault(); stopTeleop(); btn.classList.remove('active'); });
   btn.addEventListener('mouseleave', () => { stopTeleop(); btn.classList.remove('active'); });
-  btn.addEventListener('touchstart', (e) => { e.preventDefault(); startContinuousTeleop(lin, ang); btn.classList.add('active'); });
+  btn.addEventListener('touchstart', (e) => { e.preventDefault(); startContinuousTeleop(linDir, angDir); btn.classList.add('active'); });
   btn.addEventListener('touchend', (e) => { e.preventDefault(); stopTeleop(); btn.classList.remove('active'); });
 }
 
-attachButtonControls(btnFwd, 0.6, 0.0);
-attachButtonControls(btnRev, -0.6, 0.0);
-attachButtonControls(btnLeft, 0.0, 0.8);
-attachButtonControls(btnRight, 0.0, -0.8);
+attachButtonControls(btnFwd, 1.0, 0.0);
+attachButtonControls(btnRev, -1.0, 0.0);
+attachButtonControls(btnLeft, 0.0, 1.0);
+attachButtonControls(btnRight, 0.0, -1.0);
 btnStop.addEventListener('click', stopTeleop);
+
+// Speed Buttons
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSpeedLinear = parseFloat(btn.getAttribute('data-speed'));
+    currentSpeedAngular = currentSpeedLinear * 1.5;
+  });
+});
 
 // Keyboard bindings (WASD)
 window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
   if (e.repeat) return;
   const key = e.key.toLowerCase();
-  if (key === 'w' || key === 'arrowup') { startContinuousTeleop(0.6, 0.0); btnFwd.classList.add('active'); }
-  else if (key === 's' || key === 'arrowdown') { startContinuousTeleop(-0.6, 0.0); btnRev.classList.add('active'); }
-  else if (key === 'a' || key === 'arrowleft') { startContinuousTeleop(0.0, 0.8); btnLeft.classList.add('active'); }
-  else if (key === 'd' || key === 'arrowright') { startContinuousTeleop(0.0, -0.8); btnRight.classList.add('active'); }
+  if (key === 'w' || key === 'arrowup') { startContinuousTeleop(1.0, 0.0); btnFwd.classList.add('active'); }
+  else if (key === 's' || key === 'arrowdown') { startContinuousTeleop(-1.0, 0.0); btnRev.classList.add('active'); }
+  else if (key === 'a' || key === 'arrowleft') { startContinuousTeleop(0.0, 1.0); btnLeft.classList.add('active'); }
+  else if (key === 'd' || key === 'arrowright') { startContinuousTeleop(0.0, -1.0); btnRight.classList.add('active'); }
   else if (key === ' ' || key === 'escape') { stopTeleop(); }
 });
 
 window.addEventListener('keyup', (e) => {
+  if (e.target.tagName === 'INPUT') return;
   const key = e.key.toLowerCase();
   if (['w', 's', 'a', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
     stopTeleop();
@@ -214,24 +237,41 @@ window.addEventListener('keyup', (e) => {
 // Quick Action Buttons
 document.getElementById('btn-estop').addEventListener('click', () => {
   stopTeleop();
-  alert('🛑 EMERGENCY STOP ACTIVATED: Robot velocity set to 0.0');
+  alert('🛑 EMERGENCY BRAKE ENGAGED: Robot velocity locked to 0.0 m/s.');
 });
 
 document.getElementById('btn-explore').addEventListener('click', () => {
-  alert('⚡ Autonomous Exploration dispatched!');
+  alert('⚡ Autonomous Frontier Exploration command dispatched.');
 });
 
 document.getElementById('btn-save-map').addEventListener('click', () => {
-  alert('💾 Saving current 3D RTAB-Map & 2D SLAM Occupancy Grid to /maps...');
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'save_map' }));
+    alert('💾 Map Saver Triggered: Saving current SLAM map to /home/holetown/ali/Project-Zero/maps...');
+  }
 });
 
-// Uptime Counter
+// Send Nav Goal
+document.getElementById('btn-send-goal').addEventListener('click', () => {
+  const gx = parseFloat(document.getElementById('goal-x').value) || 0.0;
+  const gy = parseFloat(document.getElementById('goal-y').value) || 0.0;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'nav_goal',
+      x: gx,
+      y: gy
+    }));
+    alert(`🎯 Navigation Goal dispatched to Map Pose: (X=${gx.toFixed(2)}, Y=${gy.toFixed(2)})`);
+  }
+});
+
+// Session Uptime Counter
 setInterval(() => {
   const elapsed = Math.floor((Date.now() - startTime) / 1000);
   const hrs = String(Math.floor(elapsed / 3600)).padStart(2, '0');
   const mins = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
   const secs = String(elapsed % 60).padStart(2, '0');
-  footerTime.innerText = `Uptime: ${hrs}:${mins}:${secs}`;
+  footerUptime.innerText = `Session Duration: ${hrs}:${mins}:${secs}`;
 }, 1000);
 
 // Initialize on page load
