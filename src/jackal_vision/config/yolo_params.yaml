@@ -40,5 +40,5 @@ yolo_detector:
       - dog
       - cat
 
-    # Inference device: 'cpu' or GPU index like '0'.
-    device: 'cpu'
+    # Inference device: 'auto' (detects NVIDIA RTX 3070 GPU via CUDA), '0', or 'cpu'.
+    device: 'auto'

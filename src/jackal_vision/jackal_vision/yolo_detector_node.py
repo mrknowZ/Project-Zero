@@ -112,7 +112,18 @@ class YoloDetectorNode(Node):
         image_topic = self.get_parameter('image_topic').value
         rate_hz = self.get_parameter('detection_rate_hz').value
         raw_target_classes = self.get_parameter('target_classes').value
-        device = self.get_parameter('device').value
+        # --------------- Device Selection (RTX 3070 GPU vs Intel CPU) ---------------
+        try:
+            import torch
+            if device in ['auto', '0', 'cuda'] and torch.cuda.is_available():
+                device = '0'
+                gpu_name = torch.cuda.get_device_name(0)
+                self.get_logger().info(f'Hardware Acceleration: Utilizing Dedicated GPU [{gpu_name}]')
+            else:
+                device = 'cpu'
+                self.get_logger().info('Hardware Acceleration: Utilizing CPU inference')
+        except Exception:
+            device = 'cpu'
 
         # --------------- YOLO model ---------------
         try:
