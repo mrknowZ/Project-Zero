@@ -51,6 +51,12 @@ install(PROGRAMS
   RENAME slope_traversability_costmap_node
 )
 
+install(PROGRAMS
+  jackal_rtabmap/semantic_social_costmap_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME semantic_social_costmap_node
+)
+
 install(DIRECTORY launch config www
   DESTINATION share/${PROJECT_NAME}
 )

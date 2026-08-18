@@ -210,6 +210,29 @@ def generate_launch_description():
         output='screen',
     )
 
+    # 9b. Semantic Social & Object Exclusion Costmap Node
+    semantic_costmap_node = Node(
+        package='jackal_rtabmap',
+        executable='semantic_social_costmap_node',
+        name='semantic_social_costmap_node',
+        namespace=LaunchConfiguration('namespace'),
+        parameters=[
+            {
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+                'map_frame': 'map',
+                'social_zone_radius': 1.2,
+                'keepout_zone_radius': 0.7,
+                'grid_resolution': 0.05,
+                'grid_width_m': 20.0,
+                'grid_height_m': 20.0,
+            }
+        ],
+        remappings=[
+            ('platform/odom', ['/', LaunchConfiguration('namespace'), '/platform/odom']),
+        ],
+        output='screen',
+    )
+
     # 10. Web & Tablet Telemetry Bridge Node (Port 8080)
     web_bridge_node = Node(
         package='jackal_rtabmap',
@@ -252,6 +275,7 @@ def generate_launch_description():
         slope_traversability_node,
         delayed_explorer,
         semantic_mapper_node,
+        semantic_costmap_node,
         web_bridge_node,
         delayed_rviz,
     ])
