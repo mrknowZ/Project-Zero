@@ -60,16 +60,16 @@ function drawHorizon(pitchDeg, rollDeg) {
   const pitchPx = Math.max(-r, Math.min(r, pitchDeg * 1.5));
   horizonCtx.translate(0, pitchPx);
 
-  // Draw Sky (Soft Sky Blue #BAE6FD)
-  horizonCtx.fillStyle = '#BAE6FD';
+  // Draw Sky (Crisp Alabaster Light #F1F5F9)
+  horizonCtx.fillStyle = '#F1F5F9';
   horizonCtx.fillRect(-w, -h * 2, w * 2, h * 2);
 
-  // Draw Ground (Soft Warm Sand #DDD4C4)
-  horizonCtx.fillStyle = '#DDD4C4';
+  // Draw Ground (Studio Soft Gray #E2E8F0)
+  horizonCtx.fillStyle = '#E2E8F0';
   horizonCtx.fillRect(-w, 0, w * 2, h * 2);
 
-  // Draw Horizon Charcoal Line
-  horizonCtx.strokeStyle = '#292524';
+  // Draw Horizon Solid Black Line
+  horizonCtx.strokeStyle = '#000000';
   horizonCtx.lineWidth = 2;
   horizonCtx.beginPath();
   horizonCtx.moveTo(-w, 0);
@@ -77,7 +77,7 @@ function drawHorizon(pitchDeg, rollDeg) {
   horizonCtx.stroke();
 
   // Pitch ladder marks
-  horizonCtx.strokeStyle = 'rgba(41, 37, 36, 0.4)';
+  horizonCtx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
   horizonCtx.lineWidth = 1;
   for (let deg = -30; deg <= 30; deg += 10) {
     if (deg === 0) continue;
@@ -91,9 +91,9 @@ function drawHorizon(pitchDeg, rollDeg) {
 
   horizonCtx.restore();
 
-  // Fixed Vibrant Terracotta Reticle in center
+  // Fixed Solid Tangerine Reticle in center
   horizonCtx.save();
-  horizonCtx.strokeStyle = '#EA580C';
+  horizonCtx.strokeStyle = '#FF5500';
   horizonCtx.lineWidth = 3;
   // Left wing
   horizonCtx.beginPath();
@@ -106,13 +106,13 @@ function drawHorizon(pitchDeg, rollDeg) {
   horizonCtx.lineTo(cx + 24, cy);
   horizonCtx.stroke();
   // Center dot
-  horizonCtx.fillStyle = '#EA580C';
+  horizonCtx.fillStyle = '#FF5500';
   horizonCtx.beginPath();
   horizonCtx.arc(cx, cy, 2.5, 0, Math.PI * 2);
   horizonCtx.fill();
 
   // Outer border ring
-  horizonCtx.strokeStyle = '#E8E1D5';
+  horizonCtx.strokeStyle = '#E5E5E9';
   horizonCtx.lineWidth = 2;
   horizonCtx.beginPath();
   horizonCtx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -174,24 +174,27 @@ function updateTelemetry(data) {
     drawHorizon(pitch, roll);
 
     // Solid Status Colors
-    slopeHeaderBadge.className = `badge badge-terrain ${status.toLowerCase()}`;
+    slopeHeaderBadge.className = `pill-badge ${status === 'DANGER' ? 'pill-orange' : (status === 'CAUTION' ? 'pill-orange' : 'pill-badge')}`;
     slopeHeaderText.innerText = `Slope: ${total.toFixed(1)}° [${status}]`;
 
-    slopeCardStatus.className = `status-chip chip-${status.toLowerCase()}`;
+    slopeCardStatus.className = `pill-badge ${status === 'DANGER' ? 'pill-orange' : 'pill-success'}`;
     slopeCardStatus.innerText = status;
 
+    const heroSlope = document.getElementById('hero-stat-slope');
+    if (heroSlope) heroSlope.innerText = `${total.toFixed(1)}°`;
+
     if (status === 'DANGER') {
-      barSlope.style.backgroundColor = '#dc2626'; // Solid red
+      barSlope.style.backgroundColor = '#E11D48'; // Solid red
     } else if (status === 'CAUTION') {
-      barSlope.style.backgroundColor = '#d97706'; // Solid amber
+      barSlope.style.backgroundColor = '#FF5500'; // Solid orange
     } else {
-      barSlope.style.backgroundColor = '#059669'; // Solid emerald green
+      barSlope.style.backgroundColor = '#059669'; // Solid forest green
     }
   }
 
   // B. Camera Feed Mode
   if (data.has_yolo) {
-    cameraFeedTag.innerText = 'YOLOV8 SEMANTIC • ACTIVE';
+    cameraFeedTag.innerText = 'YOLOV8 VISION • ACTIVE';
   } else {
     cameraFeedTag.innerText = 'OPTICAL STREAM';
   }
@@ -201,6 +204,8 @@ function updateTelemetry(data) {
     valPose.innerText = `X: ${data.odom.x.toFixed(2)}m, Y: ${data.odom.y.toFixed(2)}m`;
     valYaw.innerText = `${data.odom.yaw.toFixed(1)}°`;
     valSpeed.innerText = `${data.odom.speed.toFixed(2)} m/s`;
+    const heroSpeed = document.getElementById('hero-stat-speed');
+    if (heroSpeed) heroSpeed.innerText = data.odom.speed.toFixed(2);
   }
 
   if (data.exploration) {
@@ -210,6 +215,8 @@ function updateTelemetry(data) {
   // D. 3D Semantic Landmarks Table
   if (data.landmarks && Array.isArray(data.landmarks)) {
     landmarkCount.innerText = `${data.landmarks.length} Tracked Items`;
+    const heroLandmarks = document.getElementById('hero-stat-landmarks');
+    if (heroLandmarks) heroLandmarks.innerText = data.landmarks.length;
 
     if (data.landmarks.length > 0) {
       landmarksTbody.innerHTML = '';
@@ -217,10 +224,10 @@ function updateTelemetry(data) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td><strong>#${lm.id}</strong></td>
-          <td><strong style="color: #1D4ED8;">${lm.label.toUpperCase()}</strong></td>
-          <td><span style="color: #15803D; font-weight:600;">${Math.round(lm.score * 100)}%</span></td>
-          <td><span style="font-family: var(--font-mono); color: #292524;">(${lm.x.toFixed(2)}, ${lm.y.toFixed(2)}, ${lm.z.toFixed(2)})</span></td>
-          <td><span style="color: #78716C; font-weight:600;">${lm.count} hits</span></td>
+          <td><strong style="color: #FF5500;">${lm.label.toUpperCase()}</strong></td>
+          <td><span style="color: #059669; font-weight:700;">${Math.round(lm.score * 100)}%</span></td>
+          <td><span style="font-family: var(--font-mono); font-weight:600; color: #111111;">(${lm.x.toFixed(2)}, ${lm.y.toFixed(2)}, ${lm.z.toFixed(2)})</span></td>
+          <td><span style="color: #777777; font-weight:700;">${lm.count} hits</span></td>
         `;
         landmarksTbody.appendChild(tr);
       });

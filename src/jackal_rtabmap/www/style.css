@@ -1,56 +1,51 @@
 /* ==============================================================================
-   Clearpath Jackal J100 • Human-Centered Mission Dashboard
-   Warm Earth-Toned, Elegant Scandinavian Minimalist Aesthetic
-   Inspired by Human Design Software UI
+   Clearpath Jackal J100 • Editorial Human-Design System ("Momento" Inspired)
+   Ultra-Clean Studio Light Aesthetic • Bold Typography • Solid High-Contrast Accents
    ============================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap');
 
 :root {
-  /* Warm Earth & Linen Surfaces */
-  --bg-app: #FAF7F2;          /* Warm Oat / Linen */
-  --bg-panel: #FFFFFF;        /* Crisp Off-White */
-  --bg-panel-alt: #F7F2EA;    /* Soft Warm Sand */
-  --bg-inner: #F5EFE6;        /* Warm Cream Inset */
-  --bg-subtle: #FDFBF7;       /* Very soft warm white */
+  /* Studio Light Canvas */
+  --bg-app: #F5F5F7;          /* Crisp Studio Off-White */
+  --bg-card: #FFFFFF;         /* Pure Studio White */
+  --bg-card-alt: #F0F0F3;     /* Subtle Card Inset */
+  --bg-subtle: #FAFAFC;
 
-  /* Borders & Dividers */
-  --border-panel: #E8E1D5;    /* Warm Oat Border */
-  --border-subtle: #EFE8DE;   /* Subtle divider */
-  --border-focus: #C5BBAA;    /* Active focus border */
+  /* Borders & Editorial Grid Lines */
+  --border-line: #E5E5E9;     /* Thin Editorial Hairline */
+  --border-dark: #111111;     /* Solid Black Border */
 
-  /* Solid Human Action Palette */
-  --color-primary: #1D4ED8;   /* Deep Royal Blue */
-  --color-primary-hover: #1E40AF;
-  --color-terracotta: #C2410C;/* Warm Terracotta */
-  --color-amber: #D97706;     /* Solid Amber */
-  --color-amber-hover: #B45309;
-  --color-success: #15803D;   /* Deep Forest Green */
-  --color-success-bg: #ECFDF5;
-  --color-success-border: #BBF7D0;
-  --color-danger: #DC2626;    /* Solid Crimson */
-  --color-danger-hover: #B91C1C;
-  --color-danger-bg: #FEF2F2;
-  --color-danger-border: #FECACA;
-  --color-charcoal: #1C1917;  /* Rich Dark Espresso Charcoal */
-  --color-charcoal-hover: #292524;
+  /* High-Contrast Solid Action Colors */
+  --color-black: #000000;
+  --color-black-hover: #1F1F1F;
+  --color-orange: #FF5500;    /* Solid Momento Tangerine Orange */
+  --color-orange-hover: #E04B00;
+  --color-orange-subtle: #FFF2EB;
+  --color-red: #E11D48;       /* Solid Signal Red */
+  --color-red-hover: #BE123C;
+  --color-green: #059669;     /* Solid Forest Green */
+  --color-green-subtle: #ECFDF5;
+  --color-blue: #2563EB;
 
-  /* Typography & Labels */
-  --text-main: #1C1917;       /* Deep Charcoal Text */
-  --text-secondary: #44403C;  /* Warm Slate */
-  --text-muted: #78716C;      /* Warm Stone */
-  --text-light: #A8A29E;      /* Soft Stone */
+  /* Typography */
+  --text-black: #000000;
+  --text-dark: #111111;
+  --text-body: #333333;
+  --text-muted: #777777;
+  --text-light: #999999;
 
-  /* Fonts */
-  --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --font-hero: 'Space Grotesk', -apple-system, sans-serif;
+  --font-ui: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-  /* Layout Geometry */
+  /* Geometry */
+  --radius-xl: 18px;
   --radius-lg: 14px;
   --radius-md: 10px;
-  --radius-sm: 6px;
-  --shadow-sm: 0 1px 3px rgba(35, 30, 25, 0.04), 0 1px 2px rgba(35, 30, 25, 0.02);
-  --shadow-card: 0 2px 6px rgba(35, 30, 25, 0.04), 0 1px 3px rgba(35, 30, 25, 0.02);
+  --radius-pill: 9999px;
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -61,7 +56,7 @@
 
 body {
   background-color: var(--bg-app);
-  color: var(--text-main);
+  color: var(--text-dark);
   font-family: var(--font-ui);
   font-size: 13.5px;
   line-height: 1.5;
@@ -73,127 +68,169 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 16px 22px;
-  gap: 14px;
-  max-width: 1680px;
+  padding: 16px 24px;
+  gap: 16px;
+  max-width: 1720px;
   margin: 0 auto;
 }
 
 /* ==============================================================================
-   1. Navbar Header (Warm, Clean Card)
+   1. Editorial Top Navbar
    ============================================================================== */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-panel);
-  border-radius: var(--radius-lg);
-  padding: 12px 20px;
-  box-shadow: var(--shadow-card);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-xl);
+  padding: 14px 24px;
+  box-shadow: var(--shadow-subtle);
 }
 
-.brand {
+.nav-left {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.brand-indicator {
-  width: 14px;
-  height: 14px;
-  background-color: var(--color-charcoal);
-  border-radius: 4px;
-}
-
-.brand-text h1 {
-  font-size: 1.15rem;
+.nav-meta-text {
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: -0.2px;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.badge-tag {
-  font-size: 0.7rem;
-  font-weight: 700;
-  background-color: var(--bg-inner);
-  color: var(--text-secondary);
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-panel);
-  letter-spacing: 0.5px;
-}
-
-.subtitle {
-  font-size: 0.78rem;
   color: var(--text-muted);
-  font-weight: 500;
+  letter-spacing: 0.5px;
+  font-family: var(--font-mono);
 }
 
-.header-badges {
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brand-logo {
+  font-family: var(--font-hero);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-black);
+  text-decoration: none;
+}
+
+.brand-dot {
+  color: var(--color-orange);
+}
+
+.nav-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.badge {
+.pill-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  border: 1px solid transparent;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: 0.2px;
+  border: 1px solid var(--border-line);
+  background-color: var(--bg-card);
+  color: var(--text-dark);
 }
 
-.badge-success {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
-  border-color: var(--color-success-border);
-}
-
-.badge-blue {
-  background-color: #EFF6FF;
-  color: #1D4ED8;
-  border-color: #BFDBFE;
-}
-
-.badge-terrain {
-  background-color: var(--bg-inner);
-  color: var(--text-secondary);
-  border-color: var(--border-panel);
-}
-
-.badge-terrain.caution {
-  background-color: #FEF3C7;
-  color: #B45309;
-  border-color: #FDE68A;
-}
-
-.badge-terrain.danger {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
-  border-color: var(--color-danger-border);
+.pill-success {
+  background-color: var(--color-green-subtle);
+  color: var(--color-green);
+  border-color: #A7F3D0;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background-color: var(--color-success);
+  background-color: var(--color-green);
+}
+
+.pill-orange {
+  background-color: var(--color-orange-subtle);
+  color: var(--color-orange);
+  border-color: #FED7AA;
+}
+
+.pill-black {
+  background-color: var(--color-black);
+  color: #FFFFFF;
+  border-color: var(--color-black);
 }
 
 /* ==============================================================================
-   2. Main Layout Grid (2 Columns)
+   2. Editorial Headline & Quick Status Strip
+   ============================================================================== */
+.hero-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 4px 6px;
+}
+
+.hero-title-group h1 {
+  font-family: var(--font-hero);
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+  color: var(--text-black);
+  line-height: 1.1;
+}
+
+.hero-title-group h1 span.accent {
+  color: var(--color-orange);
+}
+
+.hero-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.hero-stats-row {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.stat-box .stat-num {
+  font-family: var(--font-hero);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-black);
+  line-height: 1;
+}
+
+.stat-box .stat-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ==============================================================================
+   3. Main 2-Column Grid Layout
    ============================================================================== */
 .main-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
-  gap: 14px;
+  gap: 16px;
   flex: 1;
 }
 
@@ -206,74 +243,59 @@ body {
 .grid-col {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 /* ==============================================================================
-   3. Panel Containers (Clean White Cards)
+   4. Card Styling (Clean Pure White with Crisp 1px Borders)
    ============================================================================== */
-.panel {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-panel);
-  border-radius: var(--radius-lg);
-  padding: 16px;
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-xl);
+  padding: 18px;
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-.panel-header {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
-.panel-title {
+.card-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-main);
 }
 
-.panel-title svg {
+.card-title h2 {
+  font-family: var(--font-hero);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-black);
+}
+
+.card-title svg {
   color: var(--text-muted);
 }
 
-.panel-title h2 {
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: -0.2px;
-  color: var(--text-main);
-}
-
 /* ==============================================================================
-   4. Video Stream Card (Optical Stream)
+   5. Live Optical Stream Card
    ============================================================================== */
-.panel-camera {
-  flex: 0 0 auto;
-}
-
-.feed-status {
-  font-size: 0.72rem;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  background-color: #ECFDF5;
-  color: #15803D;
-  border: 1px solid #BBF7D0;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-}
-
 .video-frame {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background-color: var(--bg-inner);
-  border-radius: var(--radius-md);
+  background-color: var(--bg-card-alt);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid var(--border-panel);
+  border: 1px solid var(--border-line);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -288,48 +310,34 @@ body {
 
 .video-hud {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: 10px;
+  right: 10px;
   display: flex;
   gap: 6px;
 }
 
-.hud-item {
-  background-color: rgba(255, 255, 255, 0.9);
-  color: var(--text-secondary);
+.hud-pill {
+  background-color: rgba(255, 255, 255, 0.92);
+  color: var(--text-dark);
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-panel);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-line);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 /* ==============================================================================
-   5. 3D Semantic Landmarks Table
+   6. 3D Semantic Landmarks Table
    ============================================================================== */
-.panel-inventory {
-  flex: 1;
-}
-
-.pill-count {
-  font-size: 0.75rem;
-  font-weight: 600;
-  background-color: var(--bg-panel-alt);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-panel);
-  padding: 3px 10px;
-  border-radius: 20px;
-}
-
 .table-container {
-  border: 1px solid var(--border-panel);
+  border: 1px solid var(--border-line);
   border-radius: var(--radius-md);
   overflow: hidden;
   max-height: 220px;
   overflow-y: auto;
-  background-color: var(--bg-panel);
+  background-color: var(--bg-card);
 }
 
 .data-table {
@@ -340,21 +348,23 @@ body {
 }
 
 .data-table th {
-  background-color: var(--bg-panel-alt);
-  color: var(--text-secondary);
+  background-color: var(--bg-card-alt);
+  color: var(--text-muted);
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border-panel);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-line);
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
 .data-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border-subtle);
-  color: var(--text-main);
-  font-family: var(--font-ui);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-line);
+  color: var(--text-dark);
 }
 
 .data-table tr:last-child td {
@@ -368,43 +378,17 @@ body {
 .table-placeholder td {
   text-align: center;
   color: var(--text-muted);
-  padding: 20px;
+  padding: 24px;
   font-style: italic;
 }
 
 /* ==============================================================================
-   6. Slope Traversability & Attitude Horizon Instrument
+   7. Slope & Inclinometer Instrument
    ============================================================================== */
-.status-chip {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid transparent;
-}
-
-.chip-safe {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
-  border-color: var(--color-success-border);
-}
-
-.chip-caution {
-  background-color: #FEF3C7;
-  color: #B45309;
-  border-color: #FDE68A;
-}
-
-.chip-danger {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
-  border-color: var(--color-danger-border);
-}
-
 .slope-grid {
   display: grid;
   grid-template-columns: 120px 1fr;
-  gap: 14px;
+  gap: 16px;
   align-items: center;
 }
 
@@ -417,8 +401,10 @@ body {
 
 .gauge-label {
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .metric-tiles {
@@ -428,10 +414,10 @@ body {
 }
 
 .tile {
-  background-color: var(--bg-panel-alt);
-  border: 1px solid var(--border-panel);
+  background-color: var(--bg-card-alt);
+  border: 1px solid var(--border-line);
   border-radius: var(--radius-md);
-  padding: 8px 12px;
+  padding: 8px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -444,10 +430,11 @@ body {
 }
 
 .tile-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-muted);
-  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .tile-val-row {
@@ -457,43 +444,37 @@ body {
 }
 
 .tile-value {
-  font-size: 1.15rem;
+  font-family: var(--font-hero);
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-main);
-  font-family: var(--font-mono);
-}
-
-.tile-limit {
-  font-size: 0.7rem;
-  color: var(--text-light);
-  font-family: var(--font-mono);
+  color: var(--text-black);
 }
 
 .progress-track {
   height: 6px;
-  background-color: var(--border-panel);
-  border-radius: 3px;
+  background-color: var(--border-line);
+  border-radius: var(--radius-pill);
   overflow: hidden;
   margin-top: 4px;
 }
 
 .progress-bar {
   height: 100%;
-  background-color: var(--color-success);
+  background-color: var(--color-orange);
   transition: width 0.2s, background-color 0.2s;
 }
 
 /* ==============================================================================
-   7. Telemetry & Navigation Panel
+   8. Odometry & Waypoint Dispatch
    ============================================================================== */
 .mission-status-box {
-  background-color: var(--bg-panel-alt);
-  border: 1px solid var(--border-panel);
-  color: var(--text-main);
+  background-color: var(--bg-card-alt);
+  border: 1px solid var(--border-line);
+  color: var(--text-black);
   padding: 10px 14px;
   border-radius: var(--radius-md);
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -504,10 +485,10 @@ body {
 }
 
 .telemetry-card {
-  background-color: var(--bg-panel-alt);
-  border: 1px solid var(--border-panel);
+  background-color: var(--bg-card-alt);
+  border: 1px solid var(--border-line);
   border-radius: var(--radius-md);
-  padding: 8px 10px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
 }
@@ -517,21 +498,22 @@ body {
   font-weight: 700;
   color: var(--text-muted);
   letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
 .t-val {
+  font-family: var(--font-mono);
   font-size: 0.88rem;
   font-weight: 700;
-  color: var(--text-main);
-  font-family: var(--font-mono);
+  color: var(--text-black);
   margin-top: 2px;
 }
 
 .goal-input-section {
-  background-color: var(--bg-inner);
-  border: 1px solid var(--border-panel);
+  background-color: var(--bg-card-alt);
+  border: 1px solid var(--border-line);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -540,7 +522,9 @@ body {
 .section-subtitle {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .goal-input-row {
@@ -563,30 +547,31 @@ body {
 }
 
 .input-group input {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-panel);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-line);
   border-radius: var(--radius-sm);
-  color: var(--text-main);
+  color: var(--text-black);
   padding: 6px 10px;
   font-size: 0.82rem;
   font-family: var(--font-mono);
+  font-weight: 600;
   outline: none;
 }
 
 .input-group input:focus {
-  border-color: var(--color-charcoal);
+  border-color: var(--color-black);
 }
 
 /* ==============================================================================
-   8. Remote Teleoperation Cockpit (Tactile D-Pad & Solid Actions)
+   9. Remote Cockpit & Solid Buttons (Momento Editorial Palette)
    ============================================================================== */
 .speed-selector {
   display: flex;
-  background-color: var(--bg-panel-alt);
-  border: 1px solid var(--border-panel);
-  border-radius: 20px;
-  padding: 2px;
-  gap: 2px;
+  background-color: var(--bg-card-alt);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 3px;
 }
 
 .speed-btn {
@@ -594,19 +579,19 @@ body {
   border: none;
   color: var(--text-muted);
   font-size: 0.72rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 16px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .speed-btn:hover {
-  color: var(--text-main);
+  color: var(--text-black);
 }
 
 .speed-btn.active {
-  background-color: var(--color-charcoal);
+  background-color: var(--color-black);
   color: #FFFFFF;
 }
 
@@ -632,10 +617,10 @@ body {
 .dpad-btn {
   width: 44px;
   height: 44px;
-  background-color: var(--bg-panel-alt);
-  border: 1px solid var(--border-panel);
+  background-color: var(--bg-card-alt);
+  border: 1px solid var(--border-line);
   border-radius: var(--radius-md);
-  color: var(--text-main);
+  color: var(--text-black);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -643,8 +628,7 @@ body {
   justify-content: center;
   user-select: none;
   -webkit-user-select: none;
-  transition: background-color 0.1s, transform 0.05s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: all 0.1s ease;
 }
 
 .dpad-btn .arrow {
@@ -660,32 +644,32 @@ body {
 }
 
 .dpad-btn:hover {
-  background-color: #EFE7DA;
+  background-color: #E8E8EC;
 }
 
 .dpad-btn:active, .dpad-btn.active {
-  background-color: var(--color-charcoal);
+  background-color: var(--color-black);
   color: #FFFFFF;
-  border-color: var(--color-charcoal);
+  border-color: var(--color-black);
   transform: translateY(1px);
 }
 
 .dpad-btn:active .key-hint, .dpad-btn.active .key-hint {
-  color: #D6D3D1;
+  color: #CCCCCC;
 }
 
 .btn-center-stop {
-  background-color: var(--color-danger-bg);
-  border-color: var(--color-danger-border);
-  color: var(--color-danger);
+  background-color: #FEE2E2;
+  border-color: #FECACA;
+  color: var(--color-red);
 }
 
 .btn-center-stop:hover {
-  background-color: #FEE2E2;
+  background-color: #FECDD3;
 }
 
 .btn-center-stop:active, .btn-center-stop.active {
-  background-color: var(--color-danger);
+  background-color: var(--color-red);
   color: #FFFFFF;
 }
 
@@ -695,9 +679,10 @@ body {
   gap: 8px;
 }
 
+/* SOLID ACTION BUTTONS (Clean Solid Colors) */
 .btn {
-  padding: 9px 14px;
-  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
@@ -706,82 +691,98 @@ body {
   justify-content: center;
   gap: 8px;
   border: 1px solid transparent;
-  transition: background-color 0.15s, transform 0.05s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: all 0.15s ease;
 }
 
 .btn:active {
   transform: translateY(1px);
 }
 
-.btn-primary {
-  background-color: var(--color-primary);
-  color: #FFFFFF;
-  border-color: #1E40AF;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-hover);
-}
-
+/* Solid Tangerine Orange Button */
 .btn-warning {
-  background-color: var(--color-amber);
+  background-color: var(--color-orange);
   color: #FFFFFF;
-  border-color: var(--color-amber-hover);
+  border-color: var(--color-orange);
 }
 
 .btn-warning:hover {
-  background-color: var(--color-amber-hover);
+  background-color: var(--color-orange-hover);
+  border-color: var(--color-orange-hover);
+}
+
+/* Solid Jet Black Button */
+.btn-primary {
+  background-color: var(--color-black);
+  color: #FFFFFF;
+  border-color: var(--color-black);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-black-hover);
 }
 
 .btn-secondary {
-  background-color: var(--color-charcoal);
+  background-color: #27272A;
   color: #FFFFFF;
-  border-color: #0C0A09;
+  border-color: #27272A;
 }
 
 .btn-secondary:hover {
-  background-color: var(--color-charcoal-hover);
+  background-color: #18181B;
 }
 
 .btn-navy {
-  background-color: var(--color-charcoal);
+  background-color: var(--color-black);
   color: #FFFFFF;
-  border-color: #0C0A09;
+  border-color: var(--color-black);
 }
 
 .btn-navy:hover {
-  background-color: var(--color-charcoal-hover);
+  background-color: var(--color-black-hover);
 }
 
+/* Solid Signal Red Button */
 .btn-danger {
-  background-color: var(--color-danger);
+  background-color: var(--color-red);
   color: #FFFFFF;
-  border-color: var(--color-danger-hover);
+  border-color: var(--color-red);
 }
 
 .btn-danger:hover {
-  background-color: var(--color-danger-hover);
+  background-color: var(--color-red-hover);
 }
 
 /* ==============================================================================
-   9. Footer
+   10. Editorial Footer Ribbon
    ============================================================================== */
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-panel);
-  border-radius: var(--radius-lg);
-  padding: 10px 18px;
-  font-size: 0.76rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-xl);
+  padding: 12px 24px;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-subtle);
+}
+
+.footer-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-badge {
+  font-family: var(--font-hero);
+  font-weight: 700;
+  color: var(--text-dark);
+  font-size: 0.8rem;
 }
 
 #footer-uptime {
   font-family: var(--font-mono);
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: 700;
+  color: var(--text-black);
 }

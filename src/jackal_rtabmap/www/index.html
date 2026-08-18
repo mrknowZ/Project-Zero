@@ -3,38 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clearpath Jackal J100 • Industrial Autonomy Dashboard</title>
+  <title>jackal. — Industrial Autonomy Mission Control</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=4">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=5">
 </head>
 <body>
   <div class="app-layout">
     
-    <!-- Top App Header -->
+    <!-- Top Editorial Navbar -->
     <header class="navbar">
-      <div class="brand">
-        <div class="brand-indicator"></div>
-        <div class="brand-text">
-          <h1>CLEARPATH JACKAL <span class="badge-tag">J100</span></h1>
-          <p class="subtitle">Field Autonomy, 3D Voxel Costmaps & RTAB-Map SLAM</p>
-        </div>
+      <div class="nav-left">
+        <span class="nav-meta-text">CLEARPATH J100 // ROS 2 HUMBLE</span>
       </div>
 
-      <div class="header-badges">
-        <div class="badge badge-success" id="conn-status">
+      <div class="nav-center">
+        <a href="#" class="brand-logo">jackal<span class="brand-dot">.</span></a>
+      </div>
+
+      <div class="nav-right">
+        <div class="pill-badge pill-success" id="conn-status">
           <span class="status-dot"></span>
-          <span id="conn-text">System Connected</span>
+          <span id="conn-text">Online</span>
         </div>
-        <div class="badge badge-blue">
-          <span>Mode:</span> <strong id="header-mode">Autonomous Navigation</strong>
+        <div class="pill-badge pill-black">
+          <span id="header-mode">Manual Ready</span>
         </div>
-        <div class="badge badge-terrain" id="slope-header-badge">
+        <div class="pill-badge pill-orange" id="slope-header-badge">
           <span id="slope-header-text">Slope: 0.0° [Safe]</span>
         </div>
       </div>
     </header>
+
+    <!-- Editorial Hero Title & Live Stats Strip -->
+    <section class="hero-strip">
+      <div class="hero-title-group">
+        <h1>autonomous<span class="accent">.</span> - a field mission</h1>
+        <p class="hero-subtitle">3D Voxel Costmaps • RTAB-Map SLAM • YOLOv8 Perception • High-Priority Teleop Mux</p>
+      </div>
+
+      <div class="hero-stats-row">
+        <div class="stat-box">
+          <span class="stat-num" id="hero-stat-speed">0.00</span>
+          <span class="stat-label">Velocity (m/s)</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="hero-stat-slope">0.0°</span>
+          <span class="stat-label">Terrain Slope</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="hero-stat-landmarks">0</span>
+          <span class="stat-label">3D Objects</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Main 2-Column Grid -->
     <main class="main-grid">
@@ -43,34 +66,34 @@
       <div class="grid-col col-left">
         
         <!-- Live Video Feed Card -->
-        <section class="panel panel-camera">
-          <div class="panel-header">
-            <div class="panel-title">
+        <section class="card panel-camera">
+          <div class="card-header">
+            <div class="card-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
               <h2>Live Camera & YOLOv8 Vision</h2>
             </div>
-            <div class="panel-actions">
-              <span class="feed-status" id="camera-feed-tag">OPTICAL FEED • ACTIVE</span>
+            <div class="card-actions">
+              <span class="pill-badge pill-success" id="camera-feed-tag">OPTICAL FEED • ACTIVE</span>
             </div>
           </div>
 
           <div class="video-frame">
-            <img id="video-stream" src="/video_feed" alt="Jackal Live Camera Feed" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'640\' height=\'360\' viewBox=\'0 0 640 360\'><rect width=\'100%\' height=\'100%\' fill=\'%231e293b\'/><text x=\'50%\' y=\'50%\' fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'16\' text-anchor=\'middle\'>Waiting for ROS 2 camera stream...</text></svg>'">
+            <img id="video-stream" src="/video_feed" alt="Jackal Live Camera Feed" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'640\' height=\'360\' viewBox=\'0 0 640 360\'><rect width=\'100%\' height=\'100%\' fill=\'%23f0f0f3\'/><text x=\'50%\' y=\'50%\' fill=\'%23777777\' font-family=\'sans-serif\' font-size=\'16\' text-anchor=\'middle\'>Waiting for ROS 2 camera stream...</text></svg>'">
             <div class="video-hud">
-              <span class="hud-item" id="hud-fps">20 FPS</span>
-              <span class="hud-item" id="hud-res">640 × 360</span>
+              <span class="hud-pill" id="hud-fps">20 FPS</span>
+              <span class="hud-pill" id="hud-res">640 × 360</span>
             </div>
           </div>
         </section>
 
         <!-- 3D Semantic Landmarks Table -->
-        <section class="panel panel-inventory">
-          <div class="panel-header">
-            <div class="panel-title">
+        <section class="card panel-inventory">
+          <div class="card-header">
+            <div class="card-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
               <h2>3D Semantic Spatial Inventory</h2>
             </div>
-            <span class="pill-count" id="landmark-count">0 Tracked Items</span>
+            <span class="pill-badge" id="landmark-count">0 Tracked Items</span>
           </div>
 
           <div class="table-container">
@@ -99,19 +122,19 @@
       <div class="grid-col col-right">
         
         <!-- Slope Traversability & Inclinometer -->
-        <section class="panel panel-slope">
-          <div class="panel-header">
-            <div class="panel-title">
+        <section class="card panel-slope">
+          <div class="card-header">
+            <div class="card-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               <h2>Terrain Slope & Inclinometer</h2>
             </div>
-            <span class="status-chip chip-safe" id="slope-card-status">SAFE</span>
+            <span class="pill-badge pill-success" id="slope-card-status">SAFE</span>
           </div>
 
           <div class="slope-grid">
             <!-- Attitude / Horizon Canvas Instrument -->
             <div class="gauge-container">
-              <canvas id="horizon-canvas" width="110" height="110" style="width:110px; height:110px; border-radius:50%; border:2px solid #334155; display:block; background:#0f172a;"></canvas>
+              <canvas id="horizon-canvas" width="110" height="110" style="width:110px; height:110px; border-radius:50%; border:2px solid #E5E5E9; display:block; background:#FFFFFF;"></canvas>
               <span class="gauge-label">Attitude Horizon</span>
             </div>
 
@@ -142,16 +165,16 @@
         </section>
 
         <!-- Odometry & Navigation Status -->
-        <section class="panel panel-telemetry">
-          <div class="panel-header">
-            <div class="panel-title">
+        <section class="card panel-telemetry">
+          <div class="card-header">
+            <div class="card-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
               <h2>Localization & Mission Status</h2>
             </div>
           </div>
 
           <div class="mission-status-box" id="exploration-status-banner">
-            Autonomous Navigation Active • Mapping Environment
+            Manual Control Ready • Autonomy Standby
           </div>
 
           <div class="telemetry-row">
@@ -189,9 +212,9 @@
         </section>
 
         <!-- Remote Teleoperation Cockpit -->
-        <section class="panel panel-teleop">
-          <div class="panel-header">
-            <div class="panel-title">
+        <section class="card panel-teleop">
+          <div class="card-header">
+            <div class="card-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
               <h2>Industrial Teleoperation Cockpit</h2>
             </div>
@@ -230,22 +253,22 @@
               </button>
             </div>
 
-            <!-- Action Control Buttons -->
+            <!-- Action Control Buttons (SOLID COLORS) -->
             <div class="command-actions">
               <button class="btn btn-warning" id="btn-manual-override">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
                 <span>✋ Manual Override (Pause Autonomy)</span>
               </button>
               <button class="btn btn-primary" id="btn-explore">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                 <span>⚡ Resume Auto Exploration</span>
               </button>
               <button class="btn btn-secondary" id="btn-save-map">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 <span>💾 Save SLAM Map to Disk</span>
               </button>
               <button class="btn btn-danger" id="btn-estop">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span>🛑 EMERGENCY STOP (E-STOP)</span>
               </button>
             </div>
@@ -256,10 +279,16 @@
 
     </main>
 
-    <!-- Bottom Status Bar -->
+    <!-- Editorial Footer Ribbon -->
     <footer class="footer">
-      <div class="footer-left">
-        <span>Jackal J100 Field Robotics Pipeline • University / Industrial Standard ROS 2 Architecture</span>
+      <div class="footer-ribbon">
+        <span class="brand-badge">CLEARPATH ROBOTICS</span>
+        <span>•</span>
+        <span class="brand-badge">NAV2 MPPI</span>
+        <span>•</span>
+        <span class="brand-badge">RTAB-MAP 3D</span>
+        <span>•</span>
+        <span class="brand-badge">YOLOV8</span>
       </div>
       <div class="footer-right">
         <span id="footer-uptime">Session Duration: 00:00:00</span>
@@ -268,6 +297,6 @@
 
   </div>
 
-  <script src="/app.js?v=4"></script>
+  <script src="/app.js?v=5"></script>
 </body>
 </html>
