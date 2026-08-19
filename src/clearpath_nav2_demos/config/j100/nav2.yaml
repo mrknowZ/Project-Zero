@@ -156,7 +156,7 @@ local_costmap:
         mark_threshold: 0
         observation_sources: scan pointcloud
         scan:
-          topic: sensors/lidar2d_0/scan
+          topic: sensors/lidar3d_0/scan
           max_obstacle_height: 2.0
           clearing: true
           marking: true
@@ -197,7 +197,7 @@ global_costmap:
         enabled: true
         observation_sources: scan pointcloud
         scan:
-          topic: sensors/lidar2d_0/scan
+          topic: sensors/lidar3d_0/scan
           max_obstacle_height: 2.0
           clearing: true
           marking: true

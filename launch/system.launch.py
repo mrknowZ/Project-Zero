@@ -130,6 +130,8 @@ def launch_setup(context, *args, **kwargs):
         )
         actions.append(pointcloud_to_laserscan_node)
 
+    scan_topic_val = f'/{namespace_val}/sensors/lidar2d_0/scan' if sim else f'/{namespace_val}/sensors/lidar3d_0/scan'
+
     # ---------------- 2. Localization (AMCL + Map Server) ----------------
     localization_delay = 6.0 if sim else 1.0
     localization_launch = TimerAction(
@@ -143,6 +145,7 @@ def launch_setup(context, *args, **kwargs):
                     'use_sim_time': use_sim_time_str,
                     'setup_path': setup_path_val,
                     'map': map_path,
+                    'scan_topic': scan_topic_val,
                 }.items(),
             )
         ],
@@ -161,6 +164,7 @@ def launch_setup(context, *args, **kwargs):
                 launch_arguments={
                     'use_sim_time': use_sim_time_str,
                     'setup_path': setup_path_val,
+                    'scan_topic': scan_topic_val,
                 }.items(),
             )
         ],
