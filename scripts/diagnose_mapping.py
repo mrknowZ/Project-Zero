@@ -11,6 +11,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid, Odometry
 import tf2_ros
+from tf2_msgs.msg import TFMessage
 
 
 class SystemDiagnostic(Node):
@@ -21,6 +22,7 @@ class SystemDiagnostic(Node):
         self.map_count = 0
         self.odom_count = 0
         self.latest_map_info = None
+        self.tf_frames = set()
 
         scan_topic = f"/{namespace}/sensors/lidar3d_0/scan"
         map_topic = f"/{namespace}/map"
@@ -33,16 +35,23 @@ class SystemDiagnostic(Node):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
         
-        # Subscribe to namespaced TF topics
-        from tf2_msgs.msg import TFMessage
         self.tf_count = 0
         self.create_subscription(TFMessage, f"/{namespace}/tf", self.tf_cb, 50)
-        self.create_subscription(TFMessage, f"/{namespace}/tf_static", self.tf_cb, 50)
+        self.create_subscription(TFMessage, f"/{namespace}/tf_static", self.tf_static_cb, 50)
+        self.create_subscription(TFMessage, "/tf", self.tf_cb, 50)
+        self.create_subscription(TFMessage, "/tf_static", self.tf_static_cb, 50)
 
     def tf_cb(self, msg):
         self.tf_count += len(msg.transforms)
         for t in msg.transforms:
+            self.tf_frames.add(f"{t.header.frame_id} -> {t.child_frame_id}")
             self.tf_buffer.set_transform(t, "default_authority")
+
+    def tf_static_cb(self, msg):
+        self.tf_count += len(msg.transforms)
+        for t in msg.transforms:
+            self.tf_frames.add(f"{t.header.frame_id} -> {t.child_frame_id} (static)")
+            self.tf_buffer.set_transform_static(t, "default_authority")
 
     def scan_cb(self, msg):
         self.scan_count += 1
@@ -79,43 +88,48 @@ def main():
     print(f" • Wheel Odom     (/j100_0751/platform/odom):           {odom_status} ({diag.odom_count} msgs received)")
     print(f" • Transforms     (/j100_0751/tf & tf_static):          {'✅ ACTIVE' if diag.tf_count > 0 else '❌ NO DATA'} ({diag.tf_count} transforms received)")
 
+    print("\n🌲 DETECTED TF PAIRS IN TREE:")
+    for pair in sorted(diag.tf_frames):
+        print(f"   ↳ {pair}")
+
     print("\n🌲 TF TRANSFORM TREE CONNECTIVITY:")
-    # Check odom -> base_link
+    # Check odom -> base_link (with or without namespace)
     odom_to_base = False
-    try:
-        diag.tf_buffer.lookup_transform("odom", "base_link", rclpy.time.Time())
-        odom_to_base = True
-        print(" • [odom -> base_link]:     ✅ CONNECTED")
-    except Exception as e:
-        print(f" • [odom -> base_link]:     ❌ DISCONNECTED ({e})")
+    for p_odom in ["odom", "j100_0751/odom"]:
+        for c_base in ["base_link", "j100_0751/base_link"]:
+            try:
+                diag.tf_buffer.lookup_transform(p_odom, c_base, rclpy.time.Time())
+                odom_to_base = True
+                print(f" • [{p_odom} -> {c_base}]:     ✅ CONNECTED")
+                break
+            except Exception:
+                pass
+    if not odom_to_base:
+        print(" • [odom -> base_link]:     ❌ DISCONNECTED")
 
     # Check map -> odom
     map_to_odom = False
-    try:
-        diag.tf_buffer.lookup_transform("map", "odom", rclpy.time.Time())
-        map_to_odom = True
-        print(" • [map -> odom]:          ✅ CONNECTED")
-    except Exception as e:
-        print(f" • [map -> odom]:          ❌ DISCONNECTED ({e})")
-
-    # Check map -> base_link
-    try:
-        diag.tf_buffer.lookup_transform("map", "base_link", rclpy.time.Time())
-        print(" • [map -> base_link]:     ✅ CONNECTED (Full localization active)")
-    except Exception as e:
-        print(f" • [map -> base_link]:     ❌ DISCONNECTED ({e})")
+    for p_map in ["map", "j100_0751/map"]:
+        for c_odom in ["odom", "j100_0751/odom"]:
+            try:
+                diag.tf_buffer.lookup_transform(p_map, c_odom, rclpy.time.Time())
+                map_to_odom = True
+                print(f" • [{p_map} -> {c_odom}]:          ✅ CONNECTED")
+                break
+            except Exception:
+                pass
+    if not map_to_odom:
+        print(" • [map -> odom]:          ❌ DISCONNECTED (Waiting for SLAM initial scan)")
 
     print("\n" + "=" * 65)
     if map_status.startswith("✅") and odom_to_base and map_to_odom:
         print("🎉 ALL SYSTEMS GREEN! SLAM and Navigation are fully working.")
     else:
-        print("⚠️ ACTION ITEMS:")
-        if diag.scan_count == 0:
-            print(" - Restart sensors service: sudo systemctl restart clearpath-sensors.service")
+        print("💡 NEXT STEP:")
         if not odom_to_base:
-            print(" - Restart platform service: sudo systemctl restart clearpath-platform.service")
+            print(" - Restart platform service on robot: sudo systemctl restart clearpath-platform.service")
         if diag.map_count == 0:
-            print(" - Check if SLAM Toolbox is running with correct scan_topic")
+            print(" - Copy latest mapping launch file to robot to fix SLAM TF link.")
     print("=" * 65 + "\n")
 
     diag.destroy_node()
