@@ -94,8 +94,6 @@ def launch_setup(context, *args, **kwargs):
         'nav2.yaml'])
 
     param_rewrites = {'use_sim_time': use_sim_time}
-    if len(scan_topic.perform(context)) > 0:
-        param_rewrites['topic'] = eval_scan_topic
 
     rewritten_parameters = RewrittenYaml(
         source_file=file_parameters,
