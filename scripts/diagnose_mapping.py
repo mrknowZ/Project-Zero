@@ -32,6 +32,17 @@ class SystemDiagnostic(Node):
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        
+        # Subscribe to namespaced TF topics
+        from tf2_msgs.msg import TFMessage
+        self.tf_count = 0
+        self.create_subscription(TFMessage, f"/{namespace}/tf", self.tf_cb, 50)
+        self.create_subscription(TFMessage, f"/{namespace}/tf_static", self.tf_cb, 50)
+
+    def tf_cb(self, msg):
+        self.tf_count += len(msg.transforms)
+        for t in msg.transforms:
+            self.tf_buffer.set_transform(t, "default_authority")
 
     def scan_cb(self, msg):
         self.scan_count += 1
@@ -66,6 +77,7 @@ def main():
     if diag.latest_map_info:
         print(f"   ↳ Map Dimensions: {diag.latest_map_info}")
     print(f" • Wheel Odom     (/j100_0751/platform/odom):           {odom_status} ({diag.odom_count} msgs received)")
+    print(f" • Transforms     (/j100_0751/tf & tf_static):          {'✅ ACTIVE' if diag.tf_count > 0 else '❌ NO DATA'} ({diag.tf_count} transforms received)")
 
     print("\n🌲 TF TRANSFORM TREE CONNECTIVITY:")
     # Check odom -> base_link
