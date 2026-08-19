@@ -5,7 +5,7 @@ Top-Level System Launch File (One Command Bringup)
 Launches the complete autonomous pipeline:
   1. Gazebo Harmonic Simulation (if sim:=true)
   2. Automatic Simulation Clock Unpause (if sim:=true)
-  3. 3D LiDAR Pointcloud -> 2D LaserScan Bridge (auto-namespaced)
+  3. 3D LiDAR Pointcloud -> 2D LaserScan Bridge (only in simulation)
   4. AMCL Localization & Map Server
   5. Nav2 Autonomy Stack (MPPI Controller, Smac/NavFn Planner, BT Navigator)
   6. YOLOv8 Real-time Vision Detector Node (auto-namespaced)
@@ -97,38 +97,38 @@ def launch_setup(context, *args, **kwargs):
         )
         actions.append(unpause_clock)
 
-    # ---------------- 2. PointCloud-to-LaserScan Bridge ----------------
-    pointcloud_to_laserscan_node = Node(
-        package='pointcloud_to_laserscan',
-        executable='pointcloud_to_laserscan_node',
-        name='pointcloud_to_laserscan',
-        namespace=namespace_val,
-        remappings=[
-            ('cloud_in', f'/{namespace_val}/sensors/lidar3d_0/points'),
-            ('scan', f'/{namespace_val}/sensors/lidar2d_0/scan'),
-            ('/tf', f'/{namespace_val}/tf'),
-            ('/tf_static', f'/{namespace_val}/tf_static'),
-        ],
-        parameters=[{
-            'target_frame': 'lidar3d_0_laser',
-            'transform_tolerance': 0.2,
-            'min_height': -0.2,
-            'max_height': 0.2,
-            'angle_min': -3.14159,
-            'angle_max': 3.14159,
-            'angle_increment': 0.0058,
-            'scan_time': 0.3333,
-            'range_min': 0.3,
-            'range_max': 20.0,
-            'use_inf': True,
-            'concurrency_level': 1,
-            'use_sim_time': use_sim_time,
-        }],
-        output='screen',
-    )
-    actions.append(pointcloud_to_laserscan_node)
+        # In simulation, bridge 3D LiDAR pointcloud to 2D LaserScan
+        pointcloud_to_laserscan_node = Node(
+            package='pointcloud_to_laserscan',
+            executable='pointcloud_to_laserscan_node',
+            name='pointcloud_to_laserscan',
+            namespace=namespace_val,
+            remappings=[
+                ('cloud_in', f'/{namespace_val}/sensors/lidar3d_0/points'),
+                ('scan', f'/{namespace_val}/sensors/lidar2d_0/scan'),
+                ('/tf', f'/{namespace_val}/tf'),
+                ('/tf_static', f'/{namespace_val}/tf_static'),
+            ],
+            parameters=[{
+                'target_frame': 'lidar3d_0_laser',
+                'transform_tolerance': 0.5,
+                'min_height': -0.2,
+                'max_height': 0.2,
+                'angle_min': -3.14159,
+                'angle_max': 3.14159,
+                'angle_increment': 0.0058,
+                'scan_time': 0.3333,
+                'range_min': 0.3,
+                'range_max': 20.0,
+                'use_inf': True,
+                'concurrency_level': 1,
+                'use_sim_time': use_sim_time,
+            }],
+            output='screen',
+        )
+        actions.append(pointcloud_to_laserscan_node)
 
-    # ---------------- 3. Localization (AMCL + Map Server) ----------------
+    # ---------------- 2. Localization (AMCL + Map Server) ----------------
     localization_delay = 6.0 if sim else 1.0
     localization_launch = TimerAction(
         period=localization_delay,
@@ -147,7 +147,7 @@ def launch_setup(context, *args, **kwargs):
     )
     actions.append(localization_launch)
 
-    # ---------------- 4. Nav2 (Planners, Controllers, BT) ----------------
+    # ---------------- 3. Nav2 (Planners, Controllers, BT) ----------------
     nav2_delay = 7.0 if sim else 2.0
     nav2_launch = TimerAction(
         period=nav2_delay,
@@ -165,7 +165,7 @@ def launch_setup(context, *args, **kwargs):
     )
     actions.append(nav2_launch)
 
-    # ---------------- 5. YOLOv8 Vision Pipeline ----------------
+    # ---------------- 4. YOLOv8 Vision Pipeline ----------------
     vision_delay = 8.0 if sim else 3.0
     vision_launch = TimerAction(
         period=vision_delay,
@@ -183,7 +183,7 @@ def launch_setup(context, *args, **kwargs):
     )
     actions.append(vision_launch)
 
-    # ---------------- 6. RViz2 Visualizer (Only if enabled) ----------------
+    # ---------------- 5. RViz2 Visualizer (Only if enabled) ----------------
     if show_rviz:
         rviz_node = Node(
             package='rviz2',
@@ -203,7 +203,7 @@ def launch_setup(context, *args, **kwargs):
         )
         actions.append(rviz_node)
 
-    # ---------------- 7. Mission Orchestrator Node (If mission:=true) ----------------
+    # ---------------- 6. Mission Orchestrator Node (If mission:=true) ----------------
     if run_mission:
         mission_delay = 18.0 if sim else 6.0
         mission_node = TimerAction(
