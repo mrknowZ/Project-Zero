@@ -2,13 +2,7 @@
 Project Zero — SAFiR Lab
 Mapping Launch File (SLAM Toolbox + Physical Hardware / Gazebo + Teleop)
 
-Launches:
-  1. Gazebo Harmonic warehouse simulation (if sim:=true)
-  2. Auto simulation clock unpause (if sim:=true)
-  3. PointCloud-to-LaserScan 3D->2D converter (if sim:=true)
-  4. SLAM Toolbox online synchronous mapping
-  5. Nav2 stack for autonomous exploration goals (optional)
-  6. RViz2 visualizer (optional)
+Directly launches SLAM Toolbox with exact hardware TF remappings so no laser scans are dropped.
 """
 
 import os
@@ -25,13 +19,13 @@ from launch.actions import (
     OpaqueFunction,
     TimerAction,
 )
-from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
 )
 from launch_ros.actions import Node
+from nav2_common.launch import RewrittenYaml
 
 
 def launch_setup(context, *args, **kwargs):
@@ -40,7 +34,7 @@ def launch_setup(context, *args, **kwargs):
     pkg_jackal_vision = get_package_share_directory('jackal_vision')
 
     default_rviz_config = PathJoinSubstitution(
-        [pkg_jackal_vision, 'config', 'mission_viz.rviz']
+        [pkg_jackal_vision, 'config', 'physical_viz.rviz']
     )
 
     sim = LaunchConfiguration('sim').perform(context).lower() == 'true'
@@ -59,7 +53,7 @@ def launch_setup(context, *args, **kwargs):
         except Exception:
             pass
 
-    use_sim_time_str = 'true' if sim else 'false'
+    use_sim_time_val = sim
     scan_topic_val = f'/{namespace_val}/sensors/lidar2d_0/scan' if sim else f'/{namespace_val}/sensors/lidar3d_0/scan'
 
     actions = []
@@ -118,37 +112,51 @@ def launch_setup(context, *args, **kwargs):
         )
         actions.extend([sim_launch, unpause_clock, pointcloud_to_laserscan_node])
 
-    # ---------------- 2. SLAM Toolbox Online Mapping ----------------
-    slam_delay = 6.0 if sim else 1.0
-    slam_launch = TimerAction(
-        period=slam_delay,
-        actions=[
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution([pkg_clearpath_nav2_demos, 'launch', 'slam.launch.py'])
-                ),
-                launch_arguments={
-                    'use_sim_time': use_sim_time_str,
-                    'setup_path': setup_path_val,
-                    'scan_topic': scan_topic_val,
-                }.items(),
-            )
+    # ---------------- 2. SLAM Toolbox Node (Direct with Hardware TF Remappings) ----------------
+    slam_config_file = PathJoinSubstitution([
+        pkg_clearpath_nav2_demos, 'config', 'j100', 'slam.yaml'
+    ])
+
+    slam_node = Node(
+        package='slam_toolbox',
+        executable='sync_slam_toolbox_node',
+        name='slam_toolbox',
+        namespace=namespace_val,
+        parameters=[
+            slam_config_file,
+            {
+                'use_sim_time': use_sim_time_val,
+                'scan_topic': scan_topic_val,
+                'odom_frame': 'odom',
+                'map_frame': 'map',
+                'base_frame': 'base_link',
+                'map_name': f'/{namespace_val}/map',
+                'transform_timeout': 0.5,
+                'tf_buffer_duration': 30.0,
+            }
         ],
+        remappings=[
+            ('/tf', f'/{namespace_val}/tf'),
+            ('/tf_static', f'/{namespace_val}/tf_static'),
+            ('scan', scan_topic_val),
+            ('map', f'/{namespace_val}/map'),
+            ('map_metadata', f'/{namespace_val}/map_metadata'),
+        ],
+        output='screen',
     )
-    actions.append(slam_launch)
+    actions.append(slam_node)
 
     # ---------------- 3. Nav2 (Optional during mapping) ----------------
     if nav2:
-        nav2_delay = 7.0 if sim else 2.0
         nav2_launch = TimerAction(
-            period=nav2_delay,
+            period=3.0,
             actions=[
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
                         PathJoinSubstitution([pkg_clearpath_nav2_demos, 'launch', 'nav2.launch.py'])
                     ),
                     launch_arguments={
-                        'use_sim_time': use_sim_time_str,
+                        'use_sim_time': 'true' if sim else 'false',
                         'setup_path': setup_path_val,
                         'scan_topic': scan_topic_val,
                     }.items(),
