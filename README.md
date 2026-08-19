@@ -52,7 +52,7 @@ Brings up all sensors, costmaps, localization, vision, and RViz without auto-sta
 ros2 launch jackal_mission system.launch.py mission:=false
 ```
 
-### Option C: Physical Jackal Deployment (Real Hardware)
+### Option C: Physical Jackal Deployment (Real Hardware — Indoor Lab)
 Run directly on the real Jackal robot connected to onboard sensors:
 
 ```bash
@@ -61,6 +61,24 @@ ros2 launch jackal_mission system.launch.py \
     use_sim_time:=false \
     setup_path:=/etc/clearpath/ \
     map:=/path/to/lab_map.yaml
+```
+
+### Option D: Advanced Outdoor Field Autonomy & Web Mission Control (Real Hardware)
+Run the complete 3D RTAB-Map SLAM, 3D Voxel Costmaps, Slope Safety Inclinometer, and Web Mission Control on the physical Jackal:
+
+```bash
+# 1. One-click setup on the robot:
+./scripts/install_on_robot.sh
+
+# 2. Launch physical autonomy stack:
+ros2 launch launch/advanced_system.launch.py \
+    sim:=false \
+    use_sim_time:=false \
+    setup_path:=/etc/clearpath/ \
+    auto_start_exploration:=false
+
+# 3. Access Web Mission Control from your phone or laptop:
+# http://<JACKAL_IP>:8080
 ```
 
 ---
