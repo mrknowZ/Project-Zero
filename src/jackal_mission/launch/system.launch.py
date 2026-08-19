@@ -39,8 +39,10 @@ def launch_setup(context, *args, **kwargs):
 
     # Read launch configuration values
     sim = LaunchConfiguration('sim').perform(context).lower() == 'true'
-    use_sim_time_str = LaunchConfiguration('use_sim_time').perform(context)
-    use_sim_time = use_sim_time_str.lower() == 'true'
+    use_sim_time_in = LaunchConfiguration('use_sim_time').perform(context).lower() == 'true'
+    use_sim_time = (sim and use_sim_time_in)
+    use_sim_time_str = 'true' if use_sim_time else 'false'
+    
     setup_path_val = LaunchConfiguration('setup_path').perform(context)
     map_path = LaunchConfiguration('map').perform(context)
     waypoints_file = LaunchConfiguration('waypoints').perform(context)
@@ -271,13 +273,13 @@ def generate_launch_description():
 
     namespace_arg = DeclareLaunchArgument(
         'namespace',
-        default_value='j100_0000',
+        default_value='j100_0751',
         description='Robot namespace (auto-detected from robot.yaml if available)',
     )
 
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='true',
+        default_value='false',
         description='Use simulation clock',
     )
 

@@ -112,6 +112,15 @@ class YoloDetectorNode(Node):
         image_topic = self.get_parameter('image_topic').value
         rate_hz = self.get_parameter('detection_rate_hz').value
         raw_target_classes = self.get_parameter('target_classes').value
+        device = self.get_parameter('device').value
+
+        # Automatically resolve namespace for camera image topic
+        ns = self.get_namespace().strip('/')
+        if image_topic.startswith('/j100_0000/'):
+            image_topic = f'/{ns}/' + image_topic[len('/j100_0000/'):] if ns else image_topic
+        elif not image_topic.startswith('/'):
+            image_topic = f'/{ns}/{image_topic}' if ns else f'/{image_topic}'
+
         # --------------- Device Selection (RTX 3070 GPU vs Intel CPU) ---------------
         try:
             import torch

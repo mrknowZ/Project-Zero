@@ -11,8 +11,8 @@ yolo_detector:
     # Minimum confidence score to keep a detection.
     confidence_threshold: 0.40
 
-    # Camera image topic to subscribe to.
-    image_topic: '/j100_0000/sensors/camera_0/color/image'
+    # Camera image topic to subscribe to (relative to namespace).
+    image_topic: 'sensors/camera_0/color/image'
 
     # Maximum inference rate (Hz).
     detection_rate_hz: 5.0
