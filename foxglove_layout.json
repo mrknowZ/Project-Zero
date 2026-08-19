@@ -1,0 +1,79 @@
+{
+  "configById": {
+    "3D!1": {
+      "cameraState": {
+        "perspective": true,
+        "distance": 8.5,
+        "phi": 60,
+        "thetaOffset": 45,
+        "targetOffset": [0, 0, 0],
+        "target": [0, 0, 0],
+        "targetOrientation": [0, 0, 0, 1],
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "followTf": "j100_0751/base_link",
+      "scene": {
+        "enableStats": false,
+        "transforms": {
+          "showAxisLabels": true,
+          "axisScale": 0.5,
+          "enableVisual": true
+        }
+      },
+      "transforms": {},
+      "topics": {
+        "/j100_0751/map": {
+          "visible": true,
+          "colorMode": "map",
+          "alpha": 1
+        },
+        "/j100_0751/sensors/lidar3d_0/scan": {
+          "visible": true,
+          "colorField": "intensity",
+          "colorMode": "flat",
+          "flatColor": "#00ff66",
+          "pointSize": 4
+        },
+        "/j100_0751/robot_description": {
+          "visible": true
+        },
+        "/j100_0751/plan": {
+          "visible": true,
+          "color": "#ff0044"
+        }
+      },
+      "publish": {
+        "type": "point",
+        "poseTopic": "/j100_0751/goal_pose",
+        "pointTopic": "/j100_0751/clicked_point"
+      },
+      "imageMode": {}
+    },
+    "Image!1": {
+      "cameraTopic": "/j100_0751/vision/detections_image",
+      "transformMarkers": false,
+      "synchronize": false
+    },
+    "TopicGraph!1": {},
+    "Diagnostics!1": {}
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "direction": "row",
+    "first": "3D!1",
+    "second": {
+      "direction": "column",
+      "first": "Image!1",
+      "second": "Diagnostics!1",
+      "splitPercentage": 60
+    },
+    "splitPercentage": 70
+  }
+}
