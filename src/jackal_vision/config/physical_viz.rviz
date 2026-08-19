@@ -8,6 +8,7 @@ Panels:
         - /RobotModel1
         - /Map1
         - /LaserScan1
+        - /TF1
       Splitter Ratio: 0.58
     Tree Height: 693
   - Class: rviz_common/Selection
@@ -51,7 +52,7 @@ Visualization Manager:
       Description Source: Topic
       Description Topic:
         Depth: 5
-        Durability Policy: Volatile
+        Durability Policy: Transient Local
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /j100_0751/robot_description
@@ -66,7 +67,7 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-      Marker Scale: 1
+      Marker Scale: 0.5
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -78,7 +79,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
-      Color: 255; 255; 255
+      Color: 0; 255; 0
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
@@ -86,8 +87,8 @@ Visualization Manager:
       Name: LaserScan
       Position Transformer: XYZ
       Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.05
+      Size (Pixels): 4
+      Size (m): 0.06
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -152,7 +153,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -194,21 +195,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -1.58
-      Class: rviz_default_plugins/TopDownOrtho
-      Enable Stereo Rendering:
-        Stereo Eye Separation: 0.06
-        Stereo Focal Distance: 1
-        Swap Stereo Eyes: false
-        Value: false
+      Class: rviz_default_plugins/Orbit
+      Distance: 6.0
+      Eye:
+        X: -3.5
+        Y: -3.5
+        Z: 3.5
+      Field of View: 0.785398
+      Focal Point:
+        X: 0.0
+        Y: 0.0
+        Z: 0.2
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 50.0
+      Pitch: 0.45
       Target Frame: <Fixed Frame>
-      Value: TopDownOrtho (rviz_default_plugins)
-      X: 0.0
-      Y: 0.0
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 0.785
     Saved: ~
 Window Geometry:
   Displays:
